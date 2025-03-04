@@ -1,3 +1,63 @@
+# Next.js Token Handler Component
+
+This project includes a reusable client component for Next.js that handles token storage from URL parameters.
+
+## TokenHandler Component
+
+The `TokenHandler` component is designed to:
+
+1. Extract a token from URL parameters
+2. Store the token in localStorage
+3. Redirect the user to a specified path
+
+### Usage
+
+```tsx
+import TokenHandler from '@/components/TokenHandler';
+
+export default function AuthCallbackPage() {
+  return (
+    <div>
+      <h1>Authentication Callback</h1>
+      <TokenHandler 
+        redirectPath="/dashboard" 
+        tokenParamName="token" 
+        storageKey="auth_token" 
+      />
+    </div>
+  );
+}
+```
+
+### Props
+
+The component accepts the following props:
+
+- `redirectPath` (optional): Path to redirect after storing token (default: '/')
+- `tokenParamName` (optional): Name of the URL parameter containing the token (default: 'token')
+- `storageKey` (optional): Key to use when storing in localStorage (default: 'auth_token')
+
+### Example URL
+
+After authentication, redirect users to:
+```
+https://your-domain.com/auth/callback?token=your-auth-token
+```
+
+## Implementation Details
+
+- Uses Next.js's `useSearchParams` hook to access URL parameters
+- Uses `useRouter` for client-side navigation after token storage
+- Includes error handling for localStorage operations
+- Displays a loading message while processing
+
+## Security Considerations
+
+- This implementation assumes the token is passed securely
+- Consider using HTTPS to prevent token interception
+- For enhanced security, consider using HTTP-only cookies instead of localStorage
+- The token in the URL might be visible in browser history and server logs
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
