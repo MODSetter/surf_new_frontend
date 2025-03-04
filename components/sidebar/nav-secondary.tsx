@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { ThemeTogglerComponent } from "../theme-toggle"
+
 
 export function NavSecondary({
   items,
@@ -24,11 +24,6 @@ export function NavSecondary({
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
-          <SidebarMenuItem key="theme-toggle">
-            <SidebarMenuButton asChild size="sm">
-              <ThemeTogglerComponent />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild size="sm">
