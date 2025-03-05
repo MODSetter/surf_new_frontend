@@ -52,7 +52,7 @@ const layout = async ({ params, children }: { params: { search_space_id: string 
     
         {
           title: "Documents",
-          url: `/dashboard/${search_space_id}/documents`,
+          url: "#",
           icon: "FileStack",
           items: [
             {
@@ -67,7 +67,7 @@ const layout = async ({ params, children }: { params: { search_space_id: string 
         },
         {
           title: "Connectors",
-          url: `/dashboard/${search_space_id}/connectors`,
+          url: `#`,
           icon: "Cable",
           items: [
             {
@@ -82,7 +82,7 @@ const layout = async ({ params, children }: { params: { search_space_id: string 
         },
         {
           title: "Research Synthesizer's",
-          url: `/dashboard/${search_space_id}/synthesizer`,
+          url: `#`,
           icon: "SquareLibrary",
           items: [
             {

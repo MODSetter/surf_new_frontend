@@ -240,6 +240,10 @@ export default function FileUploader() {
                                                 damping: 20,
                                             }}
                                             className="relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md shadow-[0px_10px_50px_rgba(0,0,0,0.1)]"
+                                            key="upload-icon"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
                                         >
                                             {isDragActive ? (
                                                 <motion.p
@@ -260,6 +264,10 @@ export default function FileUploader() {
                                         <motion.div
                                             variants={secondaryVariant}
                                             className="absolute opacity-0 border border-dashed border-primary inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md"
+                                            key="upload-border"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
                                         ></motion.div>
                                     )}
                                 </div>
@@ -268,7 +276,7 @@ export default function FileUploader() {
                     </motion.div>
 
                     {/* File list section */}
-                    <AnimatePresence>
+                    <AnimatePresence mode="wait">
                         {files.length > 0 && (
                             <motion.div 
                                 className="px-8 pb-8"
@@ -282,7 +290,17 @@ export default function FileUploader() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => setFiles([])}
+                                        onClick={() => {
+                                            // Use AnimatePresence to properly handle the transition
+                                            // This will ensure the file icon reappears properly
+                                            setFiles([]);
+                                            
+                                            // Force a re-render after animation completes
+                                            setTimeout(() => {
+                                                const event = new Event('resize');
+                                                window.dispatchEvent(event);
+                                            }, 350);
+                                        }}
                                         disabled={isUploading}
                                     >
                                         Clear all
@@ -415,6 +433,10 @@ export default function FileUploader() {
                                         key={ext} 
                                         className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
                                         whileHover={{ scale: 1.05, backgroundColor: "rgba(var(--primary), 0.2)" }}
+                                        initial={{ opacity: 1 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 1 }}
+                                        layout
                                     >
                                         {ext}
                                     </motion.span>
