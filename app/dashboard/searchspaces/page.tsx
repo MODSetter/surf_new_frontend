@@ -1,14 +1,40 @@
 "use client";
 
 import { toast } from "sonner";
-import SearchSpaceForm from "@/components/search-space-form";
+import { SearchSpaceForm } from "@/components/search-space-form";
 import { motion } from "framer-motion";
-
+import { useRouter } from "next/navigation";
 export default function SearchSpacesPage() {
-  const handleCreateSearchSpace = (data: { name: string; description: string }) => {
-    // In a real application, this would make an API call to create the search space
-    console.log("Creating search space:", data);
-    toast.success(`Search space "${data.name}" created successfully!`);
+  const router = useRouter();
+  const handleCreateSearchSpace = async (data: { name: string; description: string }) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/searchspaces`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('surfsense_bearer_token')}`,
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (!response.ok) {
+        toast.error("Failed to create search space");
+        throw new Error("Failed to create search space");
+      }
+      
+      const result = await response.json();
+      
+      toast.success("Search space created successfully", {
+        description: `"${data.name}" has been created.`,
+      });
+
+      router.push(`/dashboard`);
+      
+      return result;
+    } catch (error: any) {
+      console.error('Error creating search space:', error);
+      throw error;
+    }
   };
 
   return (

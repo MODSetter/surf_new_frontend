@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Plus, Search, Trash2, AlertCircle, Loader2 } from 'lucide-react'
 import { Tilt } from '@/components/ui/tilt'
 import { Spotlight } from '@/components/ui/spotlight'
 import { Logo } from '@/components/Logo';
@@ -21,6 +21,104 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSearchSpaces } from '@/hooks/use-search-spaces';
+import { useRouter } from 'next/navigation';
+
+/**
+ * Formats a date string into a readable format
+ * @param dateString - The date string to format
+ * @returns Formatted date string (e.g., "Jan 1, 2023")
+ */
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+/**
+ * Loading screen component with animation
+ */
+const LoadingScreen = () => {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-[350px] bg-background/60 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-medium">Loading</CardTitle>
+            <CardDescription>Fetching your search spaces...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-6">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="h-12 w-12 text-primary" />
+            </motion.div>
+          </CardContent>
+          <CardFooter className="border-t pt-4 text-sm text-muted-foreground">
+            This may take a moment
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </div>
+  );
+};
+
+/**
+ * Error screen component with animation
+ */
+const ErrorScreen = ({ message }: { message: string }) => {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-[400px] bg-background/60 backdrop-blur-sm border-destructive/20">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-xl font-medium">Error</CardTitle>
+            </div>
+            <CardDescription>Something went wrong</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error Details</AlertTitle>
+              <AlertDescription className="mt-2">
+                {message}
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2 border-t pt-4">
+            <Button variant="outline" onClick={() => router.refresh()}>
+              Try Again
+            </Button>
+            <Button onClick={() => router.push('/')}>
+              Go Home
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </div>
+  );
+};
 
 const DashboardPage = () => {
   // Animation variants
@@ -47,36 +145,33 @@ const DashboardPage = () => {
     },
   };
 
-  const [searchSpaces, setSearchSpaces] = useState([
-    {
-      id: 1,
-      title: "Research Documents",
-      description: "Academic papers and research notes",
-      documents: 3,
-      createdAt: "2 days ago",
-      image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1546&q=80"
-    },
-    {
-      id: 2,
-      title: "Company Wiki",
-      description: "Internal documentation and resources",
-      documents: 12,
-      createdAt: "1 week ago",
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80"
-    },
-    {
-      id: 3,
-      title: "Project Alpha",
-      description: "Project documentation and planning",
-      documents: 7,
-      createdAt: "3 days ago",
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80"
-    }
-  ]);
+  const { searchSpaces, loading, error, refreshSearchSpaces } = useSearchSpaces();
 
-  const handleDeleteSearchSpace = (id: number) => {
-    // In a real application, this would make an API call to delete the search space
-    setSearchSpaces(searchSpaces.filter(space => space.id !== id));
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error} />;
+
+  const handleDeleteSearchSpace = async (id: number) => {
+    // Send DELETE request to the API
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/searchspaces/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('surfsense_bearer_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        toast.error("Failed to delete search space");
+        throw new Error("Failed to delete search space");
+      }
+      
+      // Refresh the search spaces list after successful deletion
+      refreshSearchSpaces();
+    } catch (error) {
+      console.error('Error deleting search space:', error);
+      toast.error("An error occurred while deleting the search space");
+      return;
+    }
     toast.success("Search space deleted successfully");
   };
 
@@ -105,7 +200,7 @@ const DashboardPage = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold">Your Search Spaces</h2>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/search-spaces">
+              <Link href="/dashboard/searchspaces">
                 <Button className="h-10">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Search Space
@@ -115,12 +210,13 @@ const DashboardPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {searchSpaces.map((space) => (
+            {searchSpaces && searchSpaces.map((space) => (
               <motion.div
                 key={space.id}
                 variants={itemVariants}
                 className="aspect-[4/3]"
               >
+
                 <Tilt
                   rotationFactor={6}
                   isRevese
@@ -143,22 +239,24 @@ const DashboardPage = () => {
                   <div className="flex flex-col h-full overflow-hidden rounded-xl border bg-muted/30 backdrop-blur-sm transition-all hover:border-primary/50">
                     <div className="relative h-32 w-full overflow-hidden">
                       <img
-                        src={space.image}
-                        alt={space.title}
+                        src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80"
+                        alt={space.name}
                         className="h-full w-full object-cover grayscale duration-700 group-hover:grayscale-0"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                       <div className="absolute bottom-2 left-3 flex items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950/80">
-                          <Search className="h-4 w-4 text-blue-500" />
-                        </span>
+                        <Link href={`/dashboard/${space.id}/documents`}>
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950/80">
+                            <Search className="h-4 w-4 text-blue-500" />
+                          </span>
+                        </Link>
                       </div>
                       <div className="absolute top-2 right-2">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm hover:bg-destructive/90 hover:text-destructive-foreground"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -168,15 +266,15 @@ const DashboardPage = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Search Space</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete "{space.title}"? This action cannot be undone.
+                                Are you sure you want to delete "{space.name}"? This action cannot be undone.
                                 All documents, chats, and podcasts in this search space will be permanently deleted.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 onClick={() => handleDeleteSearchSpace(space.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                className="bg-destructive hover:bg-destructive/90"
                               >
                                 Delete
                               </AlertDialogAction>
@@ -185,18 +283,20 @@ const DashboardPage = () => {
                         </AlertDialog>
                       </div>
                     </div>
-                    <div className="flex flex-1 flex-col justify-between p-4">
-                      <div>
-                        <h3 className="font-medium text-lg">{space.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{space.description}</p>
+             
+                      <div className="flex flex-1 flex-col justify-between p-4">
+                        <div>
+                          <h3 className="font-medium text-lg">{space.name}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">{space.description}</p>
+                        </div>
+                        <div className="mt-4 flex justify-between text-xs text-muted-foreground">
+                          {/* <span>{space.title}</span> */}
+                          <span>Created {formatDate(space.created_at)}</span>
+                        </div>
                       </div>
-                      <div className="mt-4 flex justify-between text-xs text-muted-foreground">
-                        <span>{space.documents} documents</span>
-                        <span>Created {space.createdAt}</span>
-                      </div>
-                    </div>
                   </div>
                 </Tilt>
+
               </motion.div>
             ))}
 
@@ -210,7 +310,7 @@ const DashboardPage = () => {
                 </div>
                 <h3 className="text-lg font-medium mb-2">No search spaces found</h3>
                 <p className="text-muted-foreground mb-6">Create your first search space to get started</p>
-                <Link href="/search-spaces">
+                <Link href="/dashboard/searchspaces">
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Search Space
@@ -220,7 +320,7 @@ const DashboardPage = () => {
             )}
 
             {searchSpaces.length > 0 && (
-              <motion.div 
+              <motion.div
                 variants={itemVariants}
                 className="aspect-[4/3]"
               >
@@ -234,7 +334,7 @@ const DashboardPage = () => {
                   }}
                   className="group relative rounded-lg h-full"
                 >
-                  <Link href="/search-spaces" className="flex h-full">
+                  <Link href="/dashboard/searchspaces" className="flex h-full">
                     <div className="flex flex-col items-center justify-center h-full w-full rounded-xl border border-dashed bg-muted/10 hover:border-primary/50 transition-colors">
                       <Plus className="h-10 w-10 mb-3 text-muted-foreground" />
                       <span className="text-sm font-medium">Add New Search Space</span>

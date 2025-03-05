@@ -21,6 +21,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+// Define the form schema with Zod
+const searchSpaceFormSchema = z.object({
+  name: z.string().min(3, "Name is required"),
+  description: z.string().min(10, "Description is required"),
+});
+
+// Define the type for the form values
+type SearchSpaceFormValues = z.infer<typeof searchSpaceFormSchema>;
 
 interface SearchSpaceFormProps {
   onSubmit?: (data: { name: string; description: string }) => void;
@@ -37,19 +58,30 @@ export function SearchSpaceForm({
   isEditing = false,
   initialData = { name: "", description: "" }
 }: SearchSpaceFormProps) {
-  const [name, setName] = useState(initialData.name);
-  const [description, setDescription] = useState(initialData.description);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  // Initialize the form with React Hook Form and Zod validation
+  const form = useForm<SearchSpaceFormValues>({
+    resolver: zodResolver(searchSpaceFormSchema),
+    defaultValues: {
+      name: initialData.name,
+      description: initialData.description,
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle form submission
+  const handleFormSubmit = (values: SearchSpaceFormValues) => {
     if (onSubmit) {
-      onSubmit({ name, description });
+      onSubmit(values);
     }
-    // Reset form if not editing
-    if (!isEditing) {
-      setName("");
-      setDescription("");
+  };
+
+  // Handle delete confirmation
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
     }
+    setShowDeleteDialog(false);
   };
 
   // Animation variants
@@ -126,7 +158,7 @@ export function SearchSpaceForm({
                 <h3 className="text-xl font-semibold">Search Space</h3>
               </div>
               {isEditing && onDelete && (
-                <AlertDialog>
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                   <AlertDialogTrigger asChild>
                     <Button 
                       variant="ghost" 
@@ -138,20 +170,14 @@ export function SearchSpaceForm({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Search Space</AlertDialogTitle>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete this search space? This action cannot be undone.
-                        All documents, chats, and podcasts in this search space will be permanently deleted.
+                        This action cannot be undone. This will permanently delete your search space.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={onDelete}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
+                      <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -165,48 +191,55 @@ export function SearchSpaceForm({
         </Tilt>
       </motion.div>
       
-      <Separator className="my-6" />
+      <Separator className="my-4" />
       
-      <motion.form 
-        onSubmit={handleSubmit} 
-        className="space-y-6"
-        variants={itemVariants}
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="My Search Space"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="h-11"
-            />
-          </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter search space name" {...field} />
+                </FormControl>
+                <FormDescription>
+                  A unique name for your search space.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="A space for my documents and research"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-11"
-            />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter search space description" {...field} />
+                </FormControl>
+                <FormDescription>
+                  A brief description of what this search space will be used for.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex justify-end pt-2">
+            <Button 
+              type="submit" 
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {isEditing ? "Update" : "Create"}
+            </Button>
           </div>
-        </div>
-        
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-        >
-          <Button type="submit" className="w-full h-11 text-base font-medium">
-            <Plus className="mr-2 h-5 w-5" />
-            {isEditing ? "Update Search Space" : "Create Search Space"}
-          </Button>
-        </motion.div>
-      </motion.form>
+        </form>
+      </Form>
     </motion.div>
   );
 }
