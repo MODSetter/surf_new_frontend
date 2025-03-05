@@ -4,7 +4,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { ThemeTogglerComponent } from "@/components/theme-toggle"
+import { ThemeTogglerComponent } from "@/components/theme/theme-toggle"
 import React from 'react'
 import { Separator } from "@/components/ui/separator"
 
