@@ -5,11 +5,13 @@ import {
   BookOpen,
   Cable,
   FileStack,
-  LifeBuoy,
+  Undo2,
   MessageCircleMore,
   Settings2,
   SquareLibrary,
   SquareTerminal,
+  AlertCircle,
+  Info,
   type LucideIcon,
 } from "lucide-react"
 
@@ -33,11 +35,13 @@ export const iconMap: Record<string, LucideIcon> = {
   BookOpen,
   Cable,
   FileStack,
-  LifeBuoy,
+  Undo2,
   MessageCircleMore,
   Settings2,
   SquareLibrary,
   SquareTerminal,
+  AlertCircle,
+  Info
 }
 
 const defaultData = {
@@ -174,16 +178,16 @@ export function AppSidebar({
   const processedNavSecondary = React.useMemo(() => {
     return navSecondary.map(item => ({
       ...item,
-      icon: iconMap[item.icon] || LifeBuoy // Fallback to LifeBuoy if icon not found
+      icon: iconMap[item.icon] || Undo2 // Fallback to Undo2 if icon not found
     }))
   }, [navSecondary])
 
   // Process RecentChats to resolve icon names to components
   const processedRecentChats = React.useMemo(() => {
-    return RecentChats.map(item => ({
+    return RecentChats?.map(item => ({
       ...item,
       icon: iconMap[item.icon] || MessageCircleMore // Fallback to MessageCircleMore if icon not found
-    }))
+    })) || [];
   }, [RecentChats])
 
   return (
@@ -207,7 +211,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={processedNavMain} />
-        <NavProjects projects={processedRecentChats} />
+        {processedRecentChats.length > 0 && <NavProjects projects={processedRecentChats} />}
         <NavSecondary items={processedNavSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
