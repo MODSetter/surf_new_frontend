@@ -10,34 +10,33 @@ import { motion, AnimatePresence } from "framer-motion"
 
 // Grid pattern component inspired by Aceternity UI
 function GridPattern() {
-  const columns = 41;
-  const rows = 11;
-  return (
-    <div className="flex bg-gray-100 dark:bg-neutral-900 flex-shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105">
-      {Array.from({ length: rows }).map((_, row) =>
-        Array.from({ length: columns }).map((_, col) => {
-          const index = row * columns + col;
-          return (
-            <div
-              key={`${col}-${row}`}
-              className={`w-10 h-10 flex flex-shrink-0 rounded-[2px] ${
-                index % 2 === 0
-                  ? "bg-gray-50 dark:bg-neutral-950"
-                  : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
-              }`}
-            />
-          );
-        })
-      )}
-    </div>
-  );
+    const columns = 41;
+    const rows = 11;
+    return (
+        <div className="flex bg-gray-100 dark:bg-neutral-900 flex-shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105">
+            {Array.from({ length: rows }).map((_, row) =>
+                Array.from({ length: columns }).map((_, col) => {
+                    const index = row * columns + col;
+                    return (
+                        <div
+                            key={`${col}-${row}`}
+                            className={`w-10 h-10 flex flex-shrink-0 rounded-[2px] ${index % 2 === 0
+                                    ? "bg-gray-50 dark:bg-neutral-950"
+                                    : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
+                                }`}
+                        />
+                    );
+                })
+            )}
+        </div>
+    );
 }
 
 export default function FileUploader() {
     // Use the useParams hook to get the params
     const params = useParams();
     const search_space_id = params.search_space_id as string;
-    
+
     const [files, setFiles] = useState<File[]>([])
     const [isUploading, setIsUploading] = useState(false)
     const router = useRouter();
@@ -102,7 +101,7 @@ export default function FileUploader() {
 
     const handleUpload = async () => {
         setIsUploading(true)
-        
+
         const formData = new FormData()
         files.forEach((file) => {
             formData.append("files", file)
@@ -115,23 +114,20 @@ export default function FileUploader() {
                 description: "Files Uploading Initiated",
             })
 
-            //   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL!}/user/uploadfiles/`, {
-            //     method: "POST",
-            //     headers: {
-            //       'Authorization': `Bearer ${window.localStorage.getItem("token")}`
-            //     },
-            //     body: formData,
-            //   })
+            const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL!}/api/v1/documents/fileupload`, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${window.localStorage.getItem("surfsense_bearer_token")}`
+                },
+                body: formData,
+            })
 
-            //   if (!response.ok) {
-            //     throw new Error("Upload failed")
-            //   }
+            if (!response.ok) {
+                throw new Error("Upload failed")
+            }
 
-            //   const responseData = await response.json()
-            
-            // Simulate upload delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
+            await response.json()
+
             toast("Upload Successful", {
                 description: "Files Uploaded Successfully",
             })
@@ -168,10 +164,10 @@ export default function FileUploader() {
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
-        visible: { 
-            opacity: 1, 
+        visible: {
+            opacity: 1,
             y: 0,
-            transition: { 
+            transition: {
                 duration: 0.5,
                 when: "beforeChildren",
                 staggerChildren: 0.1
@@ -192,18 +188,18 @@ export default function FileUploader() {
 
     return (
         <div className="grow flex items-center justify-center p-4 md:p-8">
-            <motion.div 
+            <motion.div
                 className="w-full max-w-3xl mx-auto"
                 initial="hidden"
                 animate="visible"
                 variants={containerVariants}
             >
 
-                <motion.div 
+                <motion.div
                     className="bg-background rounded-xl shadow-lg overflow-hidden border border-border"
                     variants={itemVariants}
                 >
-                    <motion.div 
+                    <motion.div
                         className="p-10 group/file block rounded-lg cursor-pointer w-full relative overflow-hidden"
                         whileHover="animate"
                         onClick={handleClick}
@@ -216,19 +212,19 @@ export default function FileUploader() {
                         <div className="relative z-10">
                             {/* Dropzone area */}
                             <div {...getRootProps()} className="flex flex-col items-center justify-center">
-                                <input 
-                                    {...getInputProps()} 
+                                <input
+                                    {...getInputProps()}
                                     ref={fileInputRef}
                                     className="hidden"
                                 />
-                                
+
                                 <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-xl">
                                     Upload files
                                 </p>
                                 <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
                                     Drag or drop your files here or click to upload
                                 </p>
-                                
+
                                 <div className="relative w-full mt-10 max-w-xl mx-auto">
                                     {!files.length && (
                                         <motion.div
@@ -278,7 +274,7 @@ export default function FileUploader() {
                     {/* File list section */}
                     <AnimatePresence mode="wait">
                         {files.length > 0 && (
-                            <motion.div 
+                            <motion.div
                                 className="px-8 pb-8"
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: "auto" }}
@@ -294,7 +290,7 @@ export default function FileUploader() {
                                             // Use AnimatePresence to properly handle the transition
                                             // This will ensure the file icon reappears properly
                                             setFiles([]);
-                                            
+
                                             // Force a re-render after animation completes
                                             setTimeout(() => {
                                                 const event = new Event('resize');
@@ -306,11 +302,11 @@ export default function FileUploader() {
                                         Clear all
                                     </Button>
                                 </div>
-                                
+
                                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                     <AnimatePresence>
                                         {files.map((file, index) => (
-                                            <motion.div 
+                                            <motion.div
                                                 key={`${file.name}-${index}`}
                                                 layoutId={index === 0 ? "file-upload" : `file-upload-${index}`}
                                                 className="relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start p-4 w-full mx-auto rounded-md shadow-sm border border-border"
@@ -375,8 +371,8 @@ export default function FileUploader() {
                                         ))}
                                     </AnimatePresence>
                                 </div>
-                                
-                                <motion.div 
+
+                                <motion.div
                                     className="mt-6"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -388,7 +384,7 @@ export default function FileUploader() {
                                         disabled={isUploading || files.length === 0}
                                     >
                                         {isUploading ? (
-                                            <motion.div 
+                                            <motion.div
                                                 className="flex items-center gap-2"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
@@ -402,7 +398,7 @@ export default function FileUploader() {
                                                 <span>Uploading...</span>
                                             </motion.div>
                                         ) : (
-                                            <motion.div 
+                                            <motion.div
                                                 className="flex items-center gap-2"
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
@@ -418,7 +414,7 @@ export default function FileUploader() {
                     </AnimatePresence>
 
                     {/* File type information */}
-                    <motion.div 
+                    <motion.div
                         className="px-8 pb-8"
                         variants={itemVariants}
                     >
@@ -429,8 +425,8 @@ export default function FileUploader() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {supportedExtensions.map((ext) => (
-                                    <motion.span 
-                                        key={ext} 
+                                    <motion.span
+                                        key={ext}
                                         className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
                                         whileHover={{ scale: 1.05, backgroundColor: "rgba(var(--primary), 0.2)" }}
                                         initial={{ opacity: 1 }}
@@ -446,7 +442,7 @@ export default function FileUploader() {
                     </motion.div>
                 </motion.div>
             </motion.div>
-            
+
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
