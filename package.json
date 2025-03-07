@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "debug": "cross-env NODE_OPTIONS=--inspect next dev --turbopack",
+    "debug:browser": "cross-env NODE_OPTIONS=--inspect next dev --turbopack",
+    "debug:server": "cross-env NODE_OPTIONS=--inspect=0.0.0.0:9229 next dev --turbopack"
   },
   "dependencies": {
     "@ai-sdk/react": "^1.1.21",
@@ -56,6 +59,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "tailwindcss": "^4",

@@ -14,8 +14,6 @@ import {
   ExternalLink,
   Globe,
   BookOpen,
-  Twitter,
-  BarChart2,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -207,269 +205,6 @@ const dummyConnectorSources = [
       }
     ]
   },
-  {
-    id: 5,
-    name: "Analysis",
-    type: "ANALYSIS",
-    sources: [
-      { 
-        id: 21, 
-        title: "SurfSense Technology Analysis", 
-        description: "Comprehensive analysis of SurfSense's core technology",
-        url: "#analysis-tech"
-      },
-      { 
-        id: 22, 
-        title: "SurfSense Market Positioning", 
-        description: "Analysis of SurfSense's position in the AI assistant market",
-        url: "#analysis-market"
-      },
-      { 
-        id: 23, 
-        title: "SurfSense User Experience Analysis", 
-        description: "Detailed analysis of SurfSense's user experience and interface design",
-        url: "#analysis-ux"
-      },
-      { 
-        id: 24, 
-        title: "SurfSense Performance Metrics", 
-        description: "Analysis of SurfSense's performance compared to competitors",
-        url: "#analysis-performance"
-      },
-      { 
-        id: 25, 
-        title: "SurfSense Privacy Features Analysis", 
-        description: "In-depth analysis of SurfSense's privacy features and data handling",
-        url: "#analysis-privacy"
-      },
-      { 
-        id: 26, 
-        title: "SurfSense Integration Capabilities", 
-        description: "Analysis of SurfSense's integration with other tools and platforms",
-        url: "#analysis-integration"
-      },
-      { 
-        id: 27, 
-        title: "SurfSense AI Model Evaluation", 
-        description: "Technical evaluation of the AI models powering SurfSense",
-        url: "#analysis-ai-models"
-      },
-      { 
-        id: 28, 
-        title: "SurfSense Business Model Analysis", 
-        description: "Analysis of SurfSense's business model and revenue streams",
-        url: "#analysis-business"
-      },
-      { 
-        id: 29, 
-        title: "SurfSense Competitive Landscape", 
-        description: "Comprehensive analysis of SurfSense's competitors and market position",
-        url: "#analysis-competition"
-      },
-      { 
-        id: 30, 
-        title: "SurfSense Future Development Roadmap", 
-        description: "Analysis of SurfSense's planned features and development direction",
-        url: "#analysis-roadmap"
-      },
-      { 
-        id: 31, 
-        title: "SurfSense User Demographics", 
-        description: "Analysis of SurfSense's user base and target audience",
-        url: "#analysis-demographics"
-      },
-      { 
-        id: 32, 
-        title: "SurfSense Accessibility Evaluation", 
-        description: "Analysis of SurfSense's accessibility features and compliance",
-        url: "#analysis-accessibility"
-      },
-      { 
-        id: 33, 
-        title: "SurfSense Security Analysis", 
-        description: "In-depth analysis of SurfSense's security features and protocols",
-        url: "#analysis-security"
-      },
-      { 
-        id: 34, 
-        title: "SurfSense Mobile Experience", 
-        description: "Analysis of SurfSense's mobile app experience and features",
-        url: "#analysis-mobile"
-      },
-      { 
-        id: 35, 
-        title: "SurfSense Desktop Experience", 
-        description: "Analysis of SurfSense's desktop application experience",
-        url: "#analysis-desktop"
-      },
-      { 
-        id: 36, 
-        title: "SurfSense Browser Extension Analysis", 
-        description: "Detailed analysis of SurfSense's browser extension functionality",
-        url: "#analysis-extension"
-      },
-      { 
-        id: 37, 
-        title: "SurfSense API Capabilities", 
-        description: "Technical analysis of SurfSense's API and developer tools",
-        url: "#analysis-api"
-      },
-      { 
-        id: 38, 
-        title: "SurfSense Content Processing Capabilities", 
-        description: "Analysis of how SurfSense processes and organizes different content types",
-        url: "#analysis-content"
-      },
-      { 
-        id: 39, 
-        title: "SurfSense Search Functionality", 
-        description: "Analysis of SurfSense's search algorithms and capabilities",
-        url: "#analysis-search"
-      },
-      { 
-        id: 40, 
-        title: "SurfSense Enterprise Features", 
-        description: "Analysis of SurfSense's enterprise-grade features and capabilities",
-        url: "#analysis-enterprise"
-      }
-    ]
-  },
-  {
-    id: 6,
-    name: "YouTube API",
-    type: "YOUTUBE_API",
-    sources: [
-      { 
-        id: 41, 
-        title: "SurfSense Demo - How to Use the AI Assistant", 
-        description: "A comprehensive demo of SurfSense features and capabilities.",
-        url: "https://youtube.com/watch?v=surfsense-demo"
-      },
-      { 
-        id: 42, 
-        title: "SurfSense vs ChatGPT - Comparison", 
-        description: "Comparing SurfSense with other popular AI assistants.",
-        url: "https://youtube.com/watch?v=surfsense-vs-chatgpt"
-      }
-    ]
-  },
-  {
-    id: 7,
-    name: "GitHub API",
-    type: "GITHUB_API",
-    sources: [
-      { 
-        id: 43, 
-        title: "SurfSense Open Source Components", 
-        description: "Open source components used in SurfSense.",
-        url: "https://github.com/surfsense/components"
-      }
-    ]
-  },
-  {
-    id: 8,
-    name: "LinkedIn API",
-    type: "LINKEDIN_API",
-    sources: [
-      { 
-        id: 44, 
-        title: "SurfSense Company Profile", 
-        description: "Official LinkedIn profile of SurfSense.",
-        url: "https://linkedin.com/company/surfsense"
-      }
-    ]
-  },
-  {
-    id: 9,
-    name: "Reddit API",
-    type: "REDDIT_API",
-    sources: [
-      { 
-        id: 45, 
-        title: "r/SurfSense - Official Subreddit", 
-        description: "Community discussions about SurfSense.",
-        url: "https://reddit.com/r/surfsense"
-      }
-    ]
-  },
-  {
-    id: 10,
-    name: "News API",
-    type: "NEWS_API",
-    sources: [
-      { 
-        id: 46, 
-        title: "SurfSense Raises $10M in Series A Funding", 
-        description: "TechCrunch article about SurfSense funding.",
-        url: "https://techcrunch.com/surfsense-funding"
-      }
-    ]
-  },
-  {
-    id: 11,
-    name: "ArXiv API",
-    type: "ARXIV_API",
-    sources: [
-      { 
-        id: 47, 
-        title: "SurfSense: A Novel Approach to Web Content Organization Using LLMs", 
-        description: "Research paper on SurfSense technology.",
-        url: "https://arxiv.org/abs/2023.12345"
-      }
-    ]
-  },
-  {
-    id: 12,
-    name: "Wikipedia API",
-    type: "WIKIPEDIA_API",
-    sources: [
-      { 
-        id: 48, 
-        title: "SurfSense (software)", 
-        description: "Wikipedia article about SurfSense.",
-        url: "https://en.wikipedia.org/wiki/SurfSense"
-      }
-    ]
-  },
-  {
-    id: 13,
-    name: "Patents API",
-    type: "PATENTS_API",
-    sources: [
-      { 
-        id: 49, 
-        title: "Method and System for Web Content Organization Using AI", 
-        description: "Patent filed by SurfSense Inc.",
-        url: "https://patents.google.com/patent/US123456789"
-      }
-    ]
-  },
-  {
-    id: 14,
-    name: "Books API",
-    type: "BOOKS_API",
-    sources: [
-      { 
-        id: 50, 
-        title: "The Future of AI Assistants: SurfSense and Beyond", 
-        description: "Book mentioning SurfSense technology.",
-        url: "https://books.google.com/books?id=surfsense123"
-      }
-    ]
-  },
-  {
-    id: 15,
-    name: "Images API",
-    type: "IMAGES_API",
-    sources: [
-      { 
-        id: 51, 
-        title: "SurfSense Logo and Brand Assets", 
-        description: "Official SurfSense brand images.",
-        url: "https://images.google.com/surfsense-brand"
-      }
-    ]
-  }
 ];
 
 // Dummy answer with citations
@@ -480,127 +215,148 @@ const dummyAnswer = {
 
 // Helper function to get connector icon
 const getConnectorIcon = (connectorType: string) => {
+  const iconProps = { className: "h-4 w-4" };
+  
   switch(connectorType) {
     case 'SERPER_API':
     case 'TAVILY_API':
-    case 'WIKIPEDIA_API':
-      return <Globe className="h-4 w-4" />;
+      return <Globe {...iconProps} />;
     case 'ACADEMIC_API':
     case 'ARXIV_API':
     case 'BOOKS_API':
-      return <BookOpen className="h-4 w-4" />;
+      return <BookOpen {...iconProps} />;
     case 'TWITTER_API':
-    case 'REDDIT_API':
-    case 'LINKEDIN_API':
-      return <Twitter className="h-4 w-4" />;
-    case 'ANALYSIS':
-    case 'PATENTS_API':
-      return <BarChart2 className="h-4 w-4" />;
-    case 'YOUTUBE_API':
-      return <div className="h-4 w-4 flex items-center justify-center">📺</div>;
-    case 'GITHUB_API':
-      return <div className="h-4 w-4 flex items-center justify-center">💻</div>;
-    case 'NEWS_API':
-      return <div className="h-4 w-4 flex items-center justify-center">📰</div>;
-    case 'IMAGES_API':
-      return <div className="h-4 w-4 flex items-center justify-center">🖼️</div>;
+      return <X {...iconProps} />;
     default:
-      return <Search className="h-4 w-4" />;
+      return <Search {...iconProps} />;
   }
 };
 
-
-// Add this component for the segmented control
-const SegmentedControl = ({ 
-  value, 
-  onChange, 
-  options 
-}: { 
-  value: string; 
-  onChange: (value: string) => void; 
-  options: { value: string; label: string; icon: React.ReactNode }[] 
-}) => {
-  return (
-    <div className="flex rounded-md border border-border overflow-hidden">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
-            value === option.value 
-              ? 'bg-primary text-primary-foreground' 
-              : 'hover:bg-muted'
-          }`}
-          onClick={() => onChange(option.value)}
-        >
-          {option.icon}
-          <span>{option.label}</span>
-        </button>
-      ))}
-    </div>
-  );
+type SegmentedControlProps = {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{
+    value: string;
+    label: string;
+    icon: React.ReactNode;
+  }>;
 };
 
-// Enhanced connector button display
-const ConnectorButton = ({ 
-  selectedConnectors, 
-  onClick 
-}: { 
-  selectedConnectors: string[], 
-  onClick: () => void 
-}) => {
+/**
+ * A segmented control component for selecting between different options
+ */
+const SegmentedControl = ({ value, onChange, options }: SegmentedControlProps) => (
+  <div className="flex rounded-md border border-border overflow-hidden scale-90 origin-left">
+    {options.map((option) => (
+      <button
+        key={option.value}
+        className={`flex items-center gap-1 px-2 py-1 text-xs transition-colors ${
+          value === option.value 
+            ? 'bg-primary text-primary-foreground' 
+            : 'hover:bg-muted'
+        }`}
+        onClick={() => onChange(option.value)}
+        aria-pressed={value === option.value}
+      >
+        {option.icon}
+        <span>{option.label}</span>
+      </button>
+    ))}
+  </div>
+);
+
+/**
+ * Displays a small icon for a connector type
+ */
+const ConnectorIcon = ({ type, index = 0 }: { type: string; index?: number }) => (
+  <div 
+    className="w-4 h-4 rounded-full flex items-center justify-center bg-muted border border-background"
+    style={{ zIndex: 10 - index }}
+  >
+    {getConnectorIcon(type)}
+  </div>
+);
+
+/**
+ * Displays a count indicator for additional connectors
+ */
+const ConnectorCountBadge = ({ count }: { count: number }) => (
+  <div className="w-4 h-4 rounded-full flex items-center justify-center bg-primary text-primary-foreground text-[8px] font-medium border border-background z-0">
+    +{count}
+  </div>
+);
+
+type ConnectorButtonProps = {
+  selectedConnectors: string[];
+  onClick: () => void;
+};
+
+/**
+ * Button that displays selected connectors and opens connector selection dialog
+ */
+const ConnectorButton = ({ selectedConnectors, onClick }: ConnectorButtonProps) => {
   const totalConnectors = dummyConnectorSources.length;
   const selectedCount = selectedConnectors.length;
+  const progressPercentage = (selectedCount / totalConnectors) * 100;
+  
+  // Get the name of a single selected connector
+  const getSingleConnectorName = () => {
+    const connector = dummyConnectorSources.find(c => c.type === selectedConnectors[0]);
+    return connector?.name || '';
+  };
+  
+  // Get display text based on selection count
+  const getDisplayText = () => {
+    if (selectedCount === totalConnectors) return "All Connectors";
+    if (selectedCount === 1) return getSingleConnectorName();
+    return `${selectedCount} Connectors`;
+  };
+  
+  // Render the empty state (no connectors selected)
+  const renderEmptyState = () => (
+    <>
+      <Plus className="h-3 w-3 text-muted-foreground" />
+      <span className="text-muted-foreground">Select Connectors</span>
+    </>
+  );
+  
+  // Render the selected connectors preview
+  const renderSelectedConnectors = () => (
+    <>
+      <div className="flex -space-x-1.5 mr-1">
+        {/* Show up to 3 connector icons */}
+        {selectedConnectors.slice(0, 3).map((type, index) => (
+          <ConnectorIcon key={type} type={type} index={index} />
+        ))}
+        
+        {/* Show count indicator if more than 3 connectors are selected */}
+        {selectedCount > 3 && <ConnectorCountBadge count={selectedCount - 3} />}
+      </div>
+      
+      {/* Display text */}
+      <span className="font-medium">{getDisplayText()}</span>
+    </>
+  );
   
   return (
     <Button
       variant="outline"
-      className="h-9 px-3 text-sm font-medium rounded-md border-border relative overflow-hidden group"
+      className="h-7 px-2 text-xs font-medium rounded-md border-border relative overflow-hidden group scale-90 origin-left"
       onClick={onClick}
+      aria-label={selectedCount === 0 ? "Select Connectors" : `${selectedCount} connectors selected`}
     >
-      <div className="absolute bottom-0 left-0 h-1 bg-primary" 
+      {/* Progress indicator */}
+      <div 
+        className="absolute bottom-0 left-0 h-1 bg-primary" 
         style={{ 
-          width: `${(selectedCount / totalConnectors) * 100}%`,
+          width: `${progressPercentage}%`,
           transition: 'width 0.3s ease'
         }} 
       />
       
-      <div className="flex items-center gap-2 z-10 relative">
-        {selectedCount === 0 ? (
-          <>
-            <Plus className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Select Connectors</span>
-          </>
-        ) : (
-          <>
-            <div className="flex -space-x-2 mr-1">
-              {selectedConnectors.slice(0, 3).map((type, index) => {
-                const connector = dummyConnectorSources.find(c => c.type === type);
-                return (
-                  <div 
-                    key={type} 
-                    className="w-5 h-5 rounded-full flex items-center justify-center bg-muted border border-background z-10" 
-                    style={{ zIndex: 10 - index }}
-                  >
-                    {getConnectorIcon(type)}
-                  </div>
-                );
-              })}
-              {selectedCount > 3 && (
-                <div className="w-5 h-5 rounded-full flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-medium border border-background z-0">
-                  +{selectedCount - 3}
-                </div>
-              )}
-            </div>
-            <span className="font-medium">
-              {selectedCount === totalConnectors 
-                ? "All Connectors" 
-                : selectedCount === 1 
-                  ? dummyConnectorSources.find(c => c.type === selectedConnectors[0])?.name
-                  : `${selectedCount} Connectors`}
-            </span>
-          </>
-        )}
-        <ChevronDown className="h-3.5 w-3.5 ml-1 text-muted-foreground opacity-70" />
+      <div className="flex items-center gap-1.5 z-10 relative">
+        {selectedCount === 0 ? renderEmptyState() : renderSelectedConnectors()}
+        <ChevronDown className="h-3 w-3 ml-0.5 text-muted-foreground opacity-70" />
       </div>
     </Button>
   );
@@ -621,6 +377,8 @@ const ChatPage = () => {
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
   const [researchMode, setResearchMode] = useState<string>("general");
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [currentDate, setCurrentDate] = useState<string>('');
   
   const SOURCES_PER_PAGE = 5;
   const INITIAL_SOURCES_DISPLAY = 3;
@@ -630,6 +388,11 @@ const ChatPage = () => {
     setToken(localStorage.getItem('surfsense_bearer_token'));
   }, []);
 
+  // Set the current time only on the client side after initial render
+  useEffect(() => {
+    setCurrentDate(new Date().toISOString().split('T')[0]);
+    setCurrentTime(new Date().toTimeString().split(' ')[0]);
+  }, []);
 
   // Add this CSS to remove input shadow and improve the UI
   useEffect(() => {
@@ -1010,7 +773,7 @@ const ChatPage = () => {
         </div>
          
         <div className={`p-4 overflow-y-auto font-mono text-sm bg-gray-900 dark:bg-gray-950 text-gray-200 leading-relaxed ${terminalExpanded ? 'h-[400px]' : 'max-h-[200px]'} transition-all duration-300`}>
-          <div className="text-gray-500 mb-2 text-xs border-b border-gray-800 pb-1">Last login: {new Date().toISOString().split('T')[0]} {new Date().toTimeString().split(' ')[0]}</div>
+          <div className="text-gray-500 mb-2 text-xs border-b border-gray-800 pb-1">Last login: {currentDate} {currentTime}</div>
           <div className="text-gray-500 mb-1 text-xs flex items-center">
             <span className="text-green-400 mr-1">researcher@surfsense</span>
             <span className="mr-1">:</span>
@@ -1211,9 +974,9 @@ const ChatPage = () => {
                                   </div>
                                 ) : (
                                   `Load ${Math.min(SOURCES_PER_PAGE, getFilteredSources(connector).length - getPaginatedDialogSources(connector).length)} More Sources`
-                                )}
-                              </Button>
-                            )}
+                              )}
+                            </Button>
+                          )}
                             
                             {expandedSources && getFilteredSources(connector).length > 10 && (
                               <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
@@ -1300,7 +1063,7 @@ const ChatPage = () => {
                 <DialogTrigger asChild>
                   <ConnectorButton 
                     selectedConnectors={selectedConnectors} 
-                    onClick={() => {}} 
+                    onClick={() => {}}
                   />
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
@@ -1310,35 +1073,41 @@ const ChatPage = () => {
                       Choose which data sources to include in your research
                     </DialogDescription>
                   </DialogHeader>
+                  
+                  {/* Connector selection grid */}
                   <div className="grid grid-cols-2 gap-4 py-4">
-                    {dummyConnectorSources.map((connector) => (
-                      <div 
-                        key={connector.id} 
-                        className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${
-                          selectedConnectors.includes(connector.type)
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50 hover:bg-muted'
-                        }`}
-                        onClick={() => {
-                          if (selectedConnectors.includes(connector.type)) {
+                    {dummyConnectorSources.map((connector) => {
+                      const isSelected = selectedConnectors.includes(connector.type);
+                      
+                      return (
+                        <div 
+                          key={connector.id} 
+                          className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-primary/50 hover:bg-muted'
+                          }`}
+                          onClick={() => {
                             setSelectedConnectors(
-                              selectedConnectors.filter((type) => type !== connector.type)
+                              isSelected
+                                ? selectedConnectors.filter((type) => type !== connector.type)
+                                : [...selectedConnectors, connector.type]
                             );
-                          } else {
-                            setSelectedConnectors([...selectedConnectors, connector.type]);
-                          }
-                        }}
-                      >
-                        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
-                          {getConnectorIcon(connector.type)}
+                          }}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                        >
+                          <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
+                            {getConnectorIcon(connector.type)}
+                          </div>
+                          <span className="flex-1 text-sm font-medium">{connector.name}</span>
+                          {isSelected && <Check className="h-4 w-4 text-primary" />}
                         </div>
-                        <span className="flex-1 text-sm font-medium">{connector.name}</span>
-                        {selectedConnectors.includes(connector.type) && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                  
                   <DialogFooter>
                     <Button 
                       variant="outline" 
@@ -1360,20 +1129,38 @@ const ChatPage = () => {
                 value={researchMode}
                 onChange={setResearchMode}
                 options={[
-                  { value: 'general', label: 'General', icon: <Sparkles className="h-3.5 w-3.5 text-yellow-500" /> },
-                  { value: 'deep', label: 'Deep', icon: <Microscope className="h-3.5 w-3.5 text-blue-500" /> },
-                  { value: 'deeper', label: 'Deeper', icon: <Telescope className="h-3.5 w-3.5 text-purple-500" /> },
-                  { value: 'deepest', label: 'Deepest', icon: <Atom className="h-3.5 w-3.5 text-red-500" /> }
+                  { 
+                    value: 'general', 
+                    label: 'General', 
+                    icon: <Sparkles className="h-3.5 w-3.5 text-yellow-500" /> 
+                  },
+                  { 
+                    value: 'deep', 
+                    label: 'Deep', 
+                    icon: <Microscope className="h-3.5 w-3.5 text-blue-500" /> 
+                  },
+                  { 
+                    value: 'deeper', 
+                    label: 'Deeper', 
+                    icon: <Telescope className="h-3.5 w-3.5 text-purple-500" /> 
+                  },
+                  { 
+                    value: 'deepest', 
+                    label: 'Deepest', 
+                    icon: <Atom className="h-3.5 w-3.5 text-red-500" /> 
+                  }
                 ]}
               />
             </div>
 
+            {/* Send button */}
             <Button
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               type="submit"
               disabled={isLoading || !input.trim()}
+              aria-label="Send message"
             >
               <ArrowUp className="h-4 w-4 text-primary" />
               <span className="sr-only">Send</span>
