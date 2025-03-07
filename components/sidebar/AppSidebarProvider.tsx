@@ -238,7 +238,7 @@ export function AppSidebarProvider({
   const customUser = {
     name: user?.email?.split('@')[0] || 'User',
     email: user?.email || (isLoadingUser ? 'Loading...' : userError ? 'Error loading user' : 'Unknown User'),
-    avatar: '/avatar.png', // Default avatar
+    avatar: '/icon-128.png', // Default avatar
   };
 
   return (

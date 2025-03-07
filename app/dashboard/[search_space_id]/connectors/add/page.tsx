@@ -17,6 +17,8 @@ import {
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -30,18 +32,18 @@ const connectorCategories = [
     icon: <IconSearch className="h-5 w-5" />,
     connectors: [
       {
-        id: "google-search",
-        title: "Google Search API",
-        description: "Connect to Google Search API to search the web.",
+        id: "serper-api",
+        title: "Serper API",
+        description: "Connect to Serper API to search the web.",
         icon: <IconBrandGoogle className="h-6 w-6" />,
         status: "available",
       },
       {
-        id: "bing-search",
-        title: "Bing Search API",
-        description: "Connect to Microsoft Bing Search API for web search capabilities.",
+        id: "tavily-api",
+        title: "Tavily Search API",
+        description: "Connect to Tavily Search API to search the web.",
         icon: <IconBrandWindows className="h-6 w-6" />,
-        status: "coming-soon",
+        status: "available",
       },
     ],
   },
@@ -56,14 +58,14 @@ const connectorCategories = [
         title: "Slack",
         description: "Connect to your Slack workspace to access messages and channels.",
         icon: <IconBrandSlack className="h-6 w-6" />,
-        status: "available",
+        status: "coming-soon",
       },
       {
         id: "ms-teams",
         title: "Microsoft Teams",
         description: "Connect to Microsoft Teams to access your team's conversations.",
         icon: <IconBrandWindows className="h-6 w-6" />,
-        status: "available",
+        status: "coming-soon",
       },
       {
         id: "discord",
@@ -85,14 +87,14 @@ const connectorCategories = [
         title: "Notion",
         description: "Connect to your Notion workspace to access pages and databases.",
         icon: <IconBrandNotion className="h-6 w-6" />,
-        status: "available",
+        status: "coming-soon",
       },
       {
         id: "github",
         title: "GitHub",
         description: "Connect to GitHub repositories to access code and documentation.",
         icon: <IconBrandGithub className="h-6 w-6" />,
-        status: "available",
+        status: "coming-soon",
       },
     ],
   },
@@ -121,6 +123,8 @@ const connectorCategories = [
 ];
 
 export default function ConnectorsPage() {
+  const params = useParams();
+  const searchSpaceId = params.search_space_id as string;
   const [expandedCategories, setExpandedCategories] = useState<string[]>(["search-engines"]);
 
   const toggleCategory = (categoryId: string) => {
@@ -218,13 +222,27 @@ export default function ConnectorsPage() {
                         {connector.description}
                       </p>
                       
-                      <Button 
-                        variant={connector.status === "available" ? "default" : "outline"}
-                        className="w-full mt-auto"
-                        disabled={connector.status === "coming-soon"}
-                      >
-                        {connector.status === "available" ? "Connect" : "Notify Me"}
-                      </Button>
+                      {connector.status === "available" ? (
+                        <Link 
+                          href={`/dashboard/${searchSpaceId}/connectors/add/${connector.id}`}
+                          className="w-full mt-auto"
+                        >
+                          <Button 
+                            variant="default"
+                            className="w-full"
+                          >
+                            Connect
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button 
+                          variant="outline"
+                          className="w-full mt-auto"
+                          disabled
+                        >
+                          Notify Me
+                        </Button>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
