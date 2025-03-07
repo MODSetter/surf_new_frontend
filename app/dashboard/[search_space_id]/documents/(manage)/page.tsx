@@ -60,6 +60,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import {
+    AlertCircle,
     ChevronDown,
     ChevronFirst,
     ChevronLast,
@@ -76,17 +77,23 @@ import {
     FileText,
     Globe,
     MessageSquare,
-    AlertCircle,
     FileX,
     File,
-    Trash
+    Trash,
+    MoreHorizontal,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "next/navigation";
 import { useDocuments } from "@/hooks/use-documents";
 import React from "react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
+import { DocumentViewer } from "@/components/document-viewer";
+import { JsonMetadataViewer } from "@/components/json-metadata-viewer";
 
 // Define animation variants for reuse
 const fadeInScale = {
@@ -196,9 +203,46 @@ const columns: ColumnDef<Document>[] = [
         accessorKey: "content",
         cell: ({ row }) => {
             const content = row.getValue("content") as string;
+            const title = row.getValue("title") as string;
+            
+            // Create a truncated preview (first 150 characters)
+            const previewContent = content.length > 150 
+                ? content.substring(0, 150) + "..." 
+                : content;
+            
             return (
-                <div className="max-w-[300px] truncate text-sm text-muted-foreground">
-                    {content}
+                <div className="flex flex-col gap-2">
+                    <div className="max-w-[300px] max-h-[60px] overflow-hidden text-sm text-muted-foreground">
+                        <ReactMarkdown
+                            rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                // Define custom components for markdown elements
+                                p: ({node, ...props}) => <p className="markdown-paragraph" {...props} />,
+                                a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-5" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-5" {...props} />,
+                                code: ({node, className, children, ...props}: any) => {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    const isInline = !match;
+                                    return isInline 
+                                        ? <code className="bg-muted px-1 py-0.5 rounded text-xs" {...props}>{children}</code>
+                                        : <code className="block bg-muted p-2 rounded text-xs" {...props}>{children}</code>
+                                }
+                            }}
+                        >
+                            {previewContent}
+                        </ReactMarkdown>
+                    </div>
+                    <DocumentViewer 
+                        title={title} 
+                        content={content} 
+                        trigger={
+                            <Button variant="ghost" size="sm" className="w-fit text-xs">
+                                View Full Content
+                            </Button>
+                        }
+                    />
                 </div>
             );
         },
@@ -898,80 +942,45 @@ export default function DocumentsTable() {
 }
 
 function RowActions({ row }: { row: Row<Document> }) {
-    const context = React.useContext(DocumentsContext);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-    
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { deleteDocument, refreshDocuments } = useContext(DocumentsContext)!;
+    const document = row.original;
+
     const handleDelete = async () => {
-        if (!context) {
-            console.error("Context is null");
-            return;
-        }
-        
-        console.log("Deleting document with ID:", row.original.id);
         setIsDeleting(true);
-        
         try {
-            const success = await context.deleteDocument(row.original.id);
-            console.log("Delete result:", success);
-            
-            if (success) {
-                await context.refreshDocuments();
-                setIsOpen(false);
-            }
+            await deleteDocument(document.id);
+            toast.success("Document deleted successfully");
+            await refreshDocuments();
         } catch (error) {
             console.error("Error deleting document:", error);
+            toast.error("Failed to delete document");
         } finally {
             setIsDeleting(false);
+            setIsOpen(false);
         }
     };
-    
-    // Direct delete function without confirmation dialog for testing
-    const handleDirectDelete = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        
-        if (!context) {
-            console.error("Context is null");
-            return;
-        }
-        
-        console.log("Direct deleting document with ID:", row.original.id);
-        setIsDeleting(true);
-        
-        try {
-            const success = await context.deleteDocument(row.original.id);
-            console.log("Direct delete result:", success);
-            
-            if (success) {
-                await context.refreshDocuments();
-            }
-        } catch (error) {
-            console.error("Error directly deleting document:", error);
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-    
+
     return (
-        <div className="flex items-center justify-end space-x-2">
-            
+        <div className="flex justify-end">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <motion.div
-                        className="flex justify-end"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <Button size="icon" variant="ghost" className="shadow-none">
-                            <Ellipsis size={16} strokeWidth={2} />
-                        </Button>
-                    </motion.div>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                        <span>View Details</span>
-                    </DropdownMenuItem>
+                    <JsonMetadataViewer
+                        title={document.title}
+                        metadata={document.document_metadata}
+                        trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <span>View Metadata</span>
+                            </DropdownMenuItem>
+                        }
+                    />
                     <DropdownMenuSeparator />
                     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
                         <AlertDialogTrigger asChild>
