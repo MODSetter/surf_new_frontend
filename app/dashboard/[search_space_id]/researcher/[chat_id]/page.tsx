@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { useParams } from 'next/navigation';
 import { 
   Loader2, 
   ChevronDown, 
@@ -12,15 +13,8 @@ import {
   X,
   Search,
   ExternalLink,
-  Globe,
-  BookOpen,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Sparkles,
-  Microscope,
-  Telescope,
-  Atom,
   Check
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -36,11 +30,27 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
+
+// Import extracted components from the index file
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  SegmentedControl,
+  ConnectorButton as ConnectorButtonComponent,
+  getConnectorIcon,
+  renderTextWithCitations,
+  getMainViewSources as getMainViewSourcesUtil, 
+  getFilteredSources as getFilteredSourcesUtil, 
+  getPaginatedDialogSources as getPaginatedDialogSourcesUtil, 
+  getSourcesCount as getSourcesCountUtil,
+  getCitationSource as getCitationSourceUtil,
+  scrollToBottom as scrollToBottomUtil,
+  useScrollToBottom,
+  updateScrollIndicators as updateScrollIndicatorsUtil,
+  useScrollIndicators,
+  scrollTabsLeft as scrollTabsLeftUtil,
+  scrollTabsRight as scrollTabsRightUtil,
+  Source,
+  ResearchMode
+} from '@/components/chat';
 
 // Dummy data to match the screenshots
 const dummyStatusMessages = [
@@ -213,155 +223,6 @@ const dummyAnswer = {
   technologyAnalysis: "SurfSense's core technology revolves around its ability to act as a personal AI assistant for web browsing. It utilizes a cross-browser extension that enables users to save dynamic content directly into their personal knowledge base. This functionality is supported by multiple file format uploads, allowing users to save content from their personal files, including documents and images, into the same knowledge base[1]. The technology also employs GraphRAG [18], a method designed to enhance search results by finding relationships between saved content, although detailed technical specifications are not publicly available[2].\n\nThe architecture of SurfSense involves a backend powered by Langchain and FastAPI, which supports the GraphRAG functionality. This backend is self-hostable, requiring components such as Neo4j, PostgreSQL, and an OpenAI API key, indicating a complex integration of various technologies to achieve its goals[2]. The lack of detailed technical documentation poses a challenge in fully understanding the intricacies of SurfSense's implementation."
 };
 
-// Helper function to get connector icon
-const getConnectorIcon = (connectorType: string) => {
-  const iconProps = { className: "h-4 w-4" };
-  
-  switch(connectorType) {
-    case 'SERPER_API':
-    case 'TAVILY_API':
-      return <Globe {...iconProps} />;
-    case 'ACADEMIC_API':
-    case 'ARXIV_API':
-    case 'BOOKS_API':
-      return <BookOpen {...iconProps} />;
-    case 'TWITTER_API':
-      return <X {...iconProps} />;
-    default:
-      return <Search {...iconProps} />;
-  }
-};
-
-type SegmentedControlProps = {
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{
-    value: string;
-    label: string;
-    icon: React.ReactNode;
-  }>;
-};
-
-/**
- * A segmented control component for selecting between different options
- */
-const SegmentedControl = ({ value, onChange, options }: SegmentedControlProps) => (
-  <div className="flex rounded-md border border-border overflow-hidden scale-90 origin-left">
-    {options.map((option) => (
-      <button
-        key={option.value}
-        className={`flex items-center gap-1 px-2 py-1 text-xs transition-colors ${
-          value === option.value 
-            ? 'bg-primary text-primary-foreground' 
-            : 'hover:bg-muted'
-        }`}
-        onClick={() => onChange(option.value)}
-        aria-pressed={value === option.value}
-      >
-        {option.icon}
-        <span>{option.label}</span>
-      </button>
-    ))}
-  </div>
-);
-
-/**
- * Displays a small icon for a connector type
- */
-const ConnectorIcon = ({ type, index = 0 }: { type: string; index?: number }) => (
-  <div 
-    className="w-4 h-4 rounded-full flex items-center justify-center bg-muted border border-background"
-    style={{ zIndex: 10 - index }}
-  >
-    {getConnectorIcon(type)}
-  </div>
-);
-
-/**
- * Displays a count indicator for additional connectors
- */
-const ConnectorCountBadge = ({ count }: { count: number }) => (
-  <div className="w-4 h-4 rounded-full flex items-center justify-center bg-primary text-primary-foreground text-[8px] font-medium border border-background z-0">
-    +{count}
-  </div>
-);
-
-type ConnectorButtonProps = {
-  selectedConnectors: string[];
-  onClick: () => void;
-};
-
-/**
- * Button that displays selected connectors and opens connector selection dialog
- */
-const ConnectorButton = ({ selectedConnectors, onClick }: ConnectorButtonProps) => {
-  const totalConnectors = dummyConnectorSources.length;
-  const selectedCount = selectedConnectors.length;
-  const progressPercentage = (selectedCount / totalConnectors) * 100;
-  
-  // Get the name of a single selected connector
-  const getSingleConnectorName = () => {
-    const connector = dummyConnectorSources.find(c => c.type === selectedConnectors[0]);
-    return connector?.name || '';
-  };
-  
-  // Get display text based on selection count
-  const getDisplayText = () => {
-    if (selectedCount === totalConnectors) return "All Connectors";
-    if (selectedCount === 1) return getSingleConnectorName();
-    return `${selectedCount} Connectors`;
-  };
-  
-  // Render the empty state (no connectors selected)
-  const renderEmptyState = () => (
-    <>
-      <Plus className="h-3 w-3 text-muted-foreground" />
-      <span className="text-muted-foreground">Select Connectors</span>
-    </>
-  );
-  
-  // Render the selected connectors preview
-  const renderSelectedConnectors = () => (
-    <>
-      <div className="flex -space-x-1.5 mr-1">
-        {/* Show up to 3 connector icons */}
-        {selectedConnectors.slice(0, 3).map((type, index) => (
-          <ConnectorIcon key={type} type={type} index={index} />
-        ))}
-        
-        {/* Show count indicator if more than 3 connectors are selected */}
-        {selectedCount > 3 && <ConnectorCountBadge count={selectedCount - 3} />}
-      </div>
-      
-      {/* Display text */}
-      <span className="font-medium">{getDisplayText()}</span>
-    </>
-  );
-  
-  return (
-    <Button
-      variant="outline"
-      className="h-7 px-2 text-xs font-medium rounded-md border-border relative overflow-hidden group scale-90 origin-left"
-      onClick={onClick}
-      aria-label={selectedCount === 0 ? "Select Connectors" : `${selectedCount} connectors selected`}
-    >
-      {/* Progress indicator */}
-      <div 
-        className="absolute bottom-0 left-0 h-1 bg-primary" 
-        style={{ 
-          width: `${progressPercentage}%`,
-          transition: 'width 0.3s ease'
-        }} 
-      />
-      
-      <div className="flex items-center gap-1.5 z-10 relative">
-        {selectedCount === 0 ? renderEmptyState() : renderSelectedConnectors()}
-        <ChevronDown className="h-3 w-3 ml-0.5 text-muted-foreground opacity-70" />
-      </div>
-    </Button>
-  );
-};
-
 const ChatPage = () => {
   const [token, setToken] = React.useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(true);
@@ -376,12 +237,14 @@ const ChatPage = () => {
   const tabsListRef = useRef<HTMLDivElement>(null);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
-  const [researchMode, setResearchMode] = useState<string>("general");
+  const [researchMode, setResearchMode] = useState<ResearchMode>("general");
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   
   const SOURCES_PER_PAGE = 5;
   const INITIAL_SOURCES_DISPLAY = 3;
+
+  const { search_space_id } = useParams();
 
   // Get token from localStorage on client side only
   React.useEffect(() => {
@@ -470,7 +333,7 @@ const ChatPage = () => {
     }
   }, []);
 
-  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit, status, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chat`,
     streamProtocol: 'data',
     headers: {
@@ -478,10 +341,38 @@ const ChatPage = () => {
     },
     body: {
       extra_data: {
-        user_id: "user123",
+        search_space_id: search_space_id,
+        selected_connectors: selectedConnectors,
+        research_mode: researchMode
       }
+    },
+    onError: (error) => {
+      console.error("Chat error:", error);
+      // You can add additional error handling here if needed
     }
   });
+
+  // Log messages whenever they update
+  useEffect(() => {
+    console.log('Messages updated:', messages);
+  }, [messages]);
+
+    // Custom handleSubmit function to include selected connectors and answer type
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!input.trim() || status !== 'ready') return;
+    
+    // You can add additional logic here if needed
+    // For example, validation for selected connectors
+    if (selectedConnectors.length === 0) {
+      alert("Please select at least one connector");
+      return;
+    }
+    
+    // Call the original handleSubmit from useChat
+    handleChatSubmit(e);
+  };
 
   // Reference to the messages container for auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -498,261 +389,74 @@ const ChatPage = () => {
 
   // Get total sources count for a connector type
   const getSourcesCount = (connectorType: string) => {
-    return dummyConnectorSources.find(connector => connector.type === connectorType)?.sources.length || 0;
+    return getSourcesCountUtil(dummyConnectorSources, connectorType);
   };
 
   // Function to check scroll position and update indicators
   const updateScrollIndicators = () => {
-    if (tabsListRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = tabsListRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10); // 10px buffer
-    }
+    updateScrollIndicatorsUtil(tabsListRef as React.RefObject<HTMLDivElement>, setCanScrollLeft, setCanScrollRight);
   };
 
   // Initialize scroll indicators
-  useEffect(() => {
-    updateScrollIndicators();
-    // Add resize listener to update indicators when window size changes
-    window.addEventListener('resize', updateScrollIndicators);
-    return () => window.removeEventListener('resize', updateScrollIndicators);
-  }, []);
+  const updateIndicators = useScrollIndicators(
+    tabsListRef as React.RefObject<HTMLDivElement>, 
+    setCanScrollLeft, 
+    setCanScrollRight
+  );
 
   // Function to scroll tabs list left
   const scrollTabsLeft = () => {
-    if (tabsListRef.current) {
-      tabsListRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-      // Update indicators after scrolling
-      setTimeout(updateScrollIndicators, 300);
-    }
+    scrollTabsLeftUtil(tabsListRef as React.RefObject<HTMLDivElement>, updateIndicators);
   };
 
   // Function to scroll tabs list right
   const scrollTabsRight = () => {
-    if (tabsListRef.current) {
-      tabsListRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-      // Update indicators after scrolling
-      setTimeout(updateScrollIndicators, 300);
-    }
+    scrollTabsRightUtil(tabsListRef as React.RefObject<HTMLDivElement>, updateIndicators);
   };
 
-  // Ensure first tab is visible on initial render
-  useEffect(() => {
-    if (tabsListRef.current) {
-      // Reset scroll position to ensure first tab is visible
-      tabsListRef.current.scrollLeft = 0;
-      updateScrollIndicators();
-    }
-  }, []);
-
-  // Update scroll indicators when active tab changes
-  useEffect(() => {
-    if (tabsListRef.current) {
-      // Find the active tab element
-      const activeTabElement = tabsListRef.current.querySelector(`[data-state="active"]`);
-      if (activeTabElement) {
-        // Scroll the active tab into view
-        activeTabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        // Update indicators after scrolling
-        setTimeout(updateScrollIndicators, 300);
-      }
-    }
-  }, [activeTab]);
-
-  // Reset sources page when tab changes or dialog closes
-  useEffect(() => {
-    if (!dialogOpen) {
-      setSourcesPage(1);
-      setExpandedSources(false);
-    }
-  }, [activeTab, dialogOpen]);
+  // Use the scroll to bottom hook
+  useScrollToBottom(messagesEndRef as React.RefObject<HTMLDivElement>, [messages]);
 
   // Function to get sources for the main view
   const getMainViewSources = (connector: typeof dummyConnectorSources[0]) => {
-    return connector.sources.slice(0, INITIAL_SOURCES_DISPLAY);
+    return getMainViewSourcesUtil(connector, INITIAL_SOURCES_DISPLAY);
   };
 
   // Function to get filtered sources for the dialog
   const getFilteredSources = (connector: typeof dummyConnectorSources[0]) => {
-    if (!sourceFilter.trim()) {
-      return connector.sources;
-    }
-    
-    const filter = sourceFilter.toLowerCase().trim();
-    return connector.sources.filter(source => 
-      source.title.toLowerCase().includes(filter) || 
-      source.description.toLowerCase().includes(filter)
-    );
+    return getFilteredSourcesUtil(connector, sourceFilter);
   };
 
   // Function to get paginated and filtered sources for the dialog
   const getPaginatedDialogSources = (connector: typeof dummyConnectorSources[0]) => {
-    const filteredSources = getFilteredSources(connector);
-    
-    if (expandedSources) {
-      return filteredSources;
-    }
-    return filteredSources.slice(0, sourcesPage * SOURCES_PER_PAGE);
+    return getPaginatedDialogSourcesUtil(
+      connector, 
+      sourceFilter, 
+      expandedSources, 
+      sourcesPage, 
+      SOURCES_PER_PAGE
+    );
   };
 
-  // Function to handle loading more sources in the dialog
-  const handleLoadMoreSources = () => {
-    const connector = dummyConnectorSources.find(c => c.type === activeTab);
-    if (!connector) return;
-    
-    const filteredSources = getFilteredSources(connector);
-    
-    setIsLoadingMore(true);
-    
-    // Simulate loading delay
-    setTimeout(() => {
-      if ((sourcesPage + 1) * SOURCES_PER_PAGE >= filteredSources.length) {
-        setExpandedSources(true);
-      } else {
-        setSourcesPage(prev => prev + 1);
-      }
-      setIsLoadingMore(false);
-    }, 500);
+  // Function to get a citation source by ID
+  const getCitationSource = (citationId: number): Source | null => {
+    return getCitationSourceUtil(citationId, dummyConnectorSources);
   };
 
-  // Reset filter when dialog closes
-  useEffect(() => {
-    if (!dialogOpen) {
-      setSourceFilter("");
-    }
-  }, [dialogOpen]);
-
-  // Function to get citation source - optimized for incremental IDs
-  const getCitationSource = (citationId: number) => {
-    // Since IDs are incremental across all connectors, we can directly find the source
-    for (const connector of dummyConnectorSources) {
-      const source = connector.sources.find(source => source.id === citationId);
-      if (source) {
-        return {
-          ...source,
-          connectorType: connector.type,
-          connectorName: connector.name,
-          connectorId: connector.id
-        };
-      }
-    }
-    return null;
-  };
-
-  // Citation component to handle individual citations
-  const Citation = ({ citationId, citationText, position }: { citationId: number, citationText: string, position: number }) => {
-    const [open, setOpen] = useState(false);
-    const source = getCitationSource(citationId);
-    const citationKey = `citation-${citationId}-${position}`;
-    
-    if (!source) return <>{citationText}</>;
-    
+  // Connector button component with proper props
+  const ConnectorButton = (props: { selectedConnectors: string[], onClick: () => void }) => {
     return (
-      <span key={citationKey} className="relative inline-flex items-center">
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-          <DropdownMenuTrigger asChild>
-            <sup>
-              <span 
-                className="inline-flex items-center justify-center text-primary cursor-pointer bg-primary/10 hover:bg-primary/15 w-4 h-4 rounded-full text-[10px] font-medium ml-0.5 transition-colors border border-primary/20 shadow-sm"
-              >
-                {citationId}
-              </span>
-            </sup>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-80 p-0">
-            <Card className="border-0 shadow-none">
-              <div className="p-3 flex items-start gap-3">
-                <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center bg-muted rounded-full">
-                  {getConnectorIcon(source.connectorType)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-medium text-sm text-card-foreground">{source.title}</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">{source.description}</p>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <span className="truncate max-w-[200px]">{source.url}</span>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 rounded-full"
-                  onClick={() => window.open(source.url, '_blank')}
-                  title="Open in new tab"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </span>
+      <ConnectorButtonComponent 
+        {...props} 
+        connectorSources={dummyConnectorSources} 
+      />
     );
   };
 
   // Function to render text with citations
-  const renderTextWithCitations = (text: string) => {
-    // Regular expression to find citation patterns like [1], [2], etc.
-    const citationRegex = /\[(\d+)\]/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    // Find all citations in the text
-    while ((match = citationRegex.exec(text)) !== null) {
-      // Add text before the citation
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-
-      // Add the citation
-      const citationId = parseInt(match[1], 10);
-      parts.push(
-        <Citation 
-          key={`citation-${match.index}`}
-          citationId={citationId}
-          citationText={match[0]}
-          position={match.index}
-        />
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add any remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-
-    return parts;
+  const renderTextWithCitationsLocal = (text: string) => {
+    return renderTextWithCitations(text, getCitationSource);
   };
-
-  // Custom handleSubmit function to include selected connectors and answer type
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!input.trim() || isLoading) return;
-    
-    // You can add additional logic here if needed
-    // For example, validation for selected connectors
-    if (selectedConnectors.length === 0) {
-      alert("Please select at least one connector");
-      return;
-    }
-    
-    // Call the original handleSubmit from useChat
-    handleChatSubmit(e);
-  };
-
-  // Update the body when selectedConnectors or researchMode changes
-  useEffect(() => {
-    // This is just to demonstrate that we're tracking the changes
-    // In a real implementation, you might want to update the useChat configuration
-    console.log("Selected connectors:", selectedConnectors);
-    console.log("Research mode:", researchMode);
-  }, [selectedConnectors, researchMode]);
-
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] max-w-4xl mx-auto px-4 py-8 overflow-x-hidden">
@@ -964,7 +668,9 @@ const ChatPage = () => {
                               <Button 
                                 variant="ghost" 
                                 className="w-full text-sm text-gray-500 dark:text-gray-400"
-                                onClick={handleLoadMoreSources}
+                                onClick={() => {
+                                  setSourcesPage(prev => prev + 1);
+                                }}
                                 disabled={isLoadingMore}
                               >
                                 {isLoadingMore ? (
@@ -1032,13 +738,13 @@ const ChatPage = () => {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-semibold mb-4">Introduction</h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{renderTextWithCitations(dummyAnswer.introduction)}</p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{renderTextWithCitationsLocal(dummyAnswer.introduction)}</p>
             </div>
             
             <div>
               <h2 className="text-xl font-semibold mb-4">Technology Analysis</h2>
               <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                {renderTextWithCitations(dummyAnswer.technologyAnalysis)}
+                {renderTextWithCitationsLocal(dummyAnswer.technologyAnalysis)}
               </div>
             </div>
           </div>
@@ -1046,15 +752,15 @@ const ChatPage = () => {
       </div>
       
       {/* New Chat Input Form */}
-      <div className="mx-2 my-2 py-2 px-4 border border-border rounded-lg bg-background">
+      <div className="py-2 px-4 border border-border rounded-lg bg-background">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <Input
             type="text"
-            placeholder="Type your message..."
+            placeholder={status}
             value={input}
             onChange={handleInputChange}
             className="no-shadow-input border-0 focus-visible:ring-offset-0 focus-visible:ring-0 resize-none overflow-auto w-full flex-1 bg-transparent p-3 pb-1.5 text-sm outline-none placeholder:text-muted-foreground"
-            disabled={isLoading}
+            disabled={status !== 'ready'}
           />
           <div className="flex items-center justify-between px-2 py-1">
             <div className="flex items-center gap-4">
@@ -1125,29 +831,29 @@ const ChatPage = () => {
               </Dialog>
 
               {/* Research Mode Segmented Control */}
-              <SegmentedControl
+              <SegmentedControl<ResearchMode>
                 value={researchMode}
                 onChange={setResearchMode}
                 options={[
                   { 
                     value: 'general', 
                     label: 'General', 
-                    icon: <Sparkles className="h-3.5 w-3.5 text-yellow-500" /> 
+                    icon: getConnectorIcon('GENERAL') 
                   },
                   { 
                     value: 'deep', 
                     label: 'Deep', 
-                    icon: <Microscope className="h-3.5 w-3.5 text-blue-500" /> 
+                    icon: getConnectorIcon('DEEP') 
                   },
                   { 
                     value: 'deeper', 
                     label: 'Deeper', 
-                    icon: <Telescope className="h-3.5 w-3.5 text-purple-500" /> 
+                    icon: getConnectorIcon('DEEPER') 
                   },
                   { 
                     value: 'deepest', 
                     label: 'Deepest', 
-                    icon: <Atom className="h-3.5 w-3.5 text-red-500" /> 
+                    icon: getConnectorIcon('DEEPEST') 
                   }
                 ]}
               />
@@ -1159,7 +865,7 @@ const ChatPage = () => {
               size="icon"
               className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               type="submit"
-              disabled={isLoading || !input.trim()}
+              disabled={status !== 'ready' || !input.trim()}
               aria-label="Send message"
             >
               <ArrowUp className="h-4 w-4 text-primary" />
