@@ -1,13 +1,9 @@
 'use client'
-
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, Plus, Check } from "lucide-react";
-import { motion } from 'framer-motion';
+import { ArrowUp, Check } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Badge } from "@/components/ui/badge";
 
 import {
   Dialog,
@@ -25,39 +21,11 @@ import {
   SegmentedControl,
   ConnectorButton as ConnectorButtonComponent,
   getConnectorIcon,
-  ConnectorIcon,
-  ConnectorCountBadge,
-  Connector,
-  ResearchMode
+  ResearchMode,
+  researcherOptions
 } from '@/components/chat';
+import { connectorSources } from '@/components/chat/connector-sources';
 
-// Dummy connector sources for UI demonstration
-const dummyConnectorSources = [
-  {
-    id: 1,
-    name: "Serper API",
-    type: "SERPER_API",
-    sources: []
-  },
-  {
-    id: 2,
-    name: "Tavily API",
-    type: "TAVILY_API",
-    sources: []
-  },
-  {
-    id: 3,
-    name: "Academic API",
-    type: "ACADEMIC_API",
-    sources: []
-  },
-  {
-    id: 4,
-    name: "Twitter API",
-    type: "TWITTER_API",
-    sources: []
-  },
-];
 
 /**
  * Button that displays selected connectors and opens connector selection dialog
@@ -67,7 +35,7 @@ const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: 
     <ConnectorButtonComponent 
       selectedConnectors={selectedConnectors} 
       onClick={onClick} 
-      connectorSources={dummyConnectorSources}
+      connectorSources={connectorSources}
     />
   );
 };
@@ -80,9 +48,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
   const [input, setInput] = useState('');
   const router = useRouter();
 
-  const [searchtype, setSearchType] = useState("local");
-  const [answertype, setAnswerType] = useState("general_answer");
-  const [selectedConnectors, setSelectedConnectors] = useState<string[]>(["SERPER_API", "TAVILY_API"]);
+  const [selectedConnectors, setSelectedConnectors] = useState<string[]>(["CRAWLED_URL"]);
   const [researchMode, setResearchMode] = useState<ResearchMode>("general");
 
   
@@ -162,73 +128,14 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
     }
   }, []);
 
-  const handleBadgeSubmit = async (msg: string) => {
-    const token = window.localStorage.getItem("token");
-    // Create Chat & Redirect with its ID
-    try {
-      const requestOptions = {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: token,
-          type: "research",
-          title: msg,
-          chats_list: JSON.stringify([{ role: 'user', content: msg, searchtype: searchtype, answertype: answertype }]),
-        }),
-      };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL!}/searchspace/${search_space_id}/chat/create`,
-        requestOptions
-      );
-      if (!response.ok) {
-        throw new Error("Token verification failed");
-      } else {
-        const res = await response.json();
-        router.push(`/dashboard/${search_space_id}/researcher/${res.chat_id}`);
-      }
-    } catch (error) {
-      //toast error
-    }
-  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (input.trim()) {
       const token = window.localStorage.getItem("token");
       // Create Chat & Redirect with its ID
-      try {
-        const requestOptions = {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token: token,
-            type: "research",
-            title: input,
-            chats_list: JSON.stringify([{ 
-              role: 'user', 
-              content: input, 
-              searchtype: searchtype, 
-              answertype: answertype,
-              connectors: selectedConnectors,
-              researchMode: researchMode
-            }]),
-          }),
-        };
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL!}/searchspace/${search_space_id}/chat/create`,
-          requestOptions
-        );
-        if (!response.ok) {
-          throw new Error("Token verification failed");
-        } else {
-          const res = await response.json();
-          router.push(`/dashboard/${search_space_id}/researcher/${res.chat_id}`);
-        }
-      } catch (error) {
-        //toast error
-      }
     }
   };
 
@@ -280,7 +187,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
                     
                     {/* Connector selection grid */}
                     <div className="grid grid-cols-2 gap-4 py-4">
-                      {dummyConnectorSources.map((connector) => {
+                      {connectorSources.map((connector) => {
                         const isSelected = selectedConnectors.includes(connector.type);
                         
                         return (
@@ -320,7 +227,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
                         Clear All
                       </Button>
                       <Button 
-                        onClick={() => setSelectedConnectors(dummyConnectorSources.map(c => c.type))}
+                        onClick={() => setSelectedConnectors(connectorSources.map(c => c.type))}
                       >
                         Select All
                       </Button>
@@ -332,28 +239,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
                 <SegmentedControl<ResearchMode>
                   value={researchMode}
                   onChange={setResearchMode}
-                  options={[
-                    { 
-                      value: 'general', 
-                      label: 'General', 
-                      icon: getConnectorIcon('GENERAL') 
-                    },
-                    { 
-                      value: 'deep', 
-                      label: 'Deep', 
-                      icon: getConnectorIcon('DEEP') 
-                    },
-                    { 
-                      value: 'deeper', 
-                      label: 'Deeper', 
-                      icon: getConnectorIcon('DEEPER') 
-                    },
-                    { 
-                      value: 'deepest', 
-                      label: 'Deepest', 
-                      icon: getConnectorIcon('DEEPEST') 
-                    }
-                  ]}
+                  options={researcherOptions}
                 />
               </div>
 

@@ -30,4 +30,21 @@ export type ChatMessage = {
   timestamp?: string;
 };
 
+// Define message types to match useChat() structure
+export type MessageRole = 'user' | 'assistant' | 'system' | 'data';
+
+export interface ToolInvocation {
+  state: 'call' | 'result';
+  toolCallId: string;
+  toolName: string;
+  args: any;
+  result?: any;
+}
+
+export interface ToolInvocationUIPart {
+  type: 'tool-invocation';
+  toolInvocation: ToolInvocation;
+}
+
+
 export type ResearchMode = 'general' | 'deep' | 'deeper' | 'deepest'; 

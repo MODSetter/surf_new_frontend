@@ -8,16 +8,22 @@ import {
   X,
   Sparkles,
   Microscope,
-  Telescope
+  Telescope,
+  File,
+  Link
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Connector } from './types';
+import { Connector, ResearchMode } from './types';
 
 // Helper function to get connector icon
 export const getConnectorIcon = (connectorType: string) => {
   const iconProps = { className: "h-4 w-4" };
   
   switch(connectorType) {
+    case 'CREAWLED_URL':
+      return <Link {...iconProps} />;
+    case 'FILE':
+        return <File {...iconProps} />;
     case 'SERPER_API':
     case 'TAVILY_API':
       return <Globe {...iconProps} />;
@@ -37,6 +43,29 @@ export const getConnectorIcon = (connectorType: string) => {
       return <Search {...iconProps} />;
   }
 };
+
+export const researcherOptions: { value: ResearchMode; label: string; icon: React.ReactNode }[] = [
+  {
+    value: 'general',
+    label: 'General',
+    icon: getConnectorIcon('GENERAL')
+  },
+  {
+    value: 'deep',
+    label: 'Deep',
+    icon: getConnectorIcon('DEEP')
+  },
+  {
+    value: 'deeper',
+    label: 'Deeper',
+    icon: getConnectorIcon('DEEPER')
+  },
+  {
+    value: 'deepest',
+    label: 'Deepest',
+    icon: getConnectorIcon('DEEPEST')
+  }
+]
 
 /**
  * Displays a small icon for a connector type
