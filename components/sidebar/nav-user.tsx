@@ -29,6 +29,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useRouter, useParams } from "next/navigation"
 
 export function NavUser({
   user,
@@ -40,7 +41,15 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  const { search_space_id } = useParams()
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('surfsense_bearer_token');
+      router.push('/');
+    }
+  };
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -81,13 +90,13 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/${search_space_id}/api-key`)}>
                 <BadgeCheck />
-                Account
+                API Key
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>
