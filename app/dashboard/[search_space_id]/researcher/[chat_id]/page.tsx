@@ -107,6 +107,7 @@ const ChatPage = () => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [connectorSources, setConnectorSources] = useState<any[]>([]);
+  const terminalMessagesRef = useRef<HTMLDivElement>(null);
 
   const SOURCES_PER_PAGE = 5;
   const INITIAL_SOURCES_DISPLAY = 3;
@@ -254,6 +255,16 @@ const ChatPage = () => {
             setConnectorSources(latestSourcesAnnotation.content);
           }
         }
+
+        // Check for terminal info annotations and scroll terminal to bottom if they exist
+        const terminalInfoAnnotations = annotations.filter(
+          (annotation) => annotation.type === 'TERMINAL_INFO'
+        );
+        
+        if (terminalInfoAnnotations.length > 0) {
+          // Schedule scrolling after the DOM has been updated
+          setTimeout(scrollTerminalToBottom, 100);
+        }
       }
     }
   }, [messages]);
@@ -283,6 +294,13 @@ const ChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Function to scroll terminal to bottom
+  const scrollTerminalToBottom = () => {
+    if (terminalMessagesRef.current) {
+      terminalMessagesRef.current.scrollTop = terminalMessagesRef.current.scrollHeight;
+    }
+  };
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
@@ -294,6 +312,13 @@ const ChatPage = () => {
       setActiveTab(connectorSources[0].type);
     }
   }, [connectorSources]);
+
+  // Scroll terminal to bottom when expanded
+  useEffect(() => {
+    if (terminalExpanded) {
+      setTimeout(scrollTerminalToBottom, 300); // Wait for transition to complete
+    }
+  }, [terminalExpanded]);
 
   // Get total sources count for a connector type
   const getSourcesCount = (connectorType: string) => {
@@ -431,7 +456,10 @@ const ChatPage = () => {
                         </div>
                       </div>
 
-                      <div className={`p-4 overflow-y-auto font-mono text-sm bg-gray-900 dark:bg-gray-950 text-gray-200 leading-relaxed ${terminalExpanded ? 'h-[400px]' : 'max-h-[200px]'} transition-all duration-300`}>
+                      <div 
+                        ref={terminalMessagesRef}
+                        className={`p-4 overflow-y-auto font-mono text-sm bg-gray-900 dark:bg-gray-950 text-gray-200 leading-relaxed ${terminalExpanded ? 'h-[400px]' : 'max-h-[200px]'} transition-all duration-300 relative`}
+                      >
                         <div className="text-gray-500 mb-2 text-xs border-b border-gray-800 pb-1">Last login: {currentDate} {currentTime}</div>
                         <div className="text-gray-500 mb-1 text-xs flex items-center">
                           <span className="text-green-400 mr-1">researcher@surfsense</span>
@@ -471,6 +499,19 @@ const ChatPage = () => {
                           <span className="text-blue-400 mr-1">~/research</span>
                           <span className="mr-1">$</span>
                           <div className="h-4 w-2 bg-gray-400 animate-pulse"></div>
+                        </div>
+                        
+                        {/* Terminal scroll button */}
+                        <div className="absolute bottom-4 right-4">
+                          <Button
+                            onClick={scrollTerminalToBottom}
+                            className="h-6 w-6 rounded-full bg-gray-800 hover:bg-gray-700"
+                            variant="ghost"
+                            size="icon"
+                            title="Scroll to bottom"
+                          >
+                            <ArrowDown className="h-3 w-3 text-gray-400" />
+                          </Button>
                         </div>
                       </div>
                     </Card>
