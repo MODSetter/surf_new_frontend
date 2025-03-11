@@ -1,5 +1,5 @@
 // Connector sources
-export const connectorSources = [
+export const connectorSourcesMenu = [
     {
       id: 1,
       name: "Serper API",

@@ -1,5 +1,4 @@
 "use client";
-import { dummyStatusMessages } from '@/components/dummydata/tool-invocations';
 import React, { useRef, useEffect, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { useParams } from 'next/navigation';
@@ -48,7 +47,34 @@ import {
   researcherOptions
 } from '@/components/chat';
 import { MarkdownViewer } from '@/components/markdown-viewer';
-import { connectorSources } from '@/components/chat/connector-sources';
+import { connectorSourcesMenu } from '@/components/chat/connector-sources';
+
+// Define types for the new annotation structure
+interface TerminalInfoItem {
+  id: number;
+  text: string;
+  type: 'info' | 'success' | 'error' | 'warning';
+}
+
+interface SourceItem {
+  id: number;
+  title: string;
+  description: string;
+  url: string;
+  connectorType?: string;
+}
+
+interface ConnectorSource {
+  id: number;
+  name: string;
+  type: string;
+  sources: SourceItem[];
+}
+
+interface Annotation {
+  type: 'TERMINAL_INFO' | 'SOURCES' | 'ANSWER';
+  content: TerminalInfoItem[] | ConnectorSource[] | string[];
+}
 
 /**
  * Button that displays selected connectors and opens connector selection dialog
@@ -58,7 +84,7 @@ const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: 
     <ConnectorButtonComponent 
       selectedConnectors={selectedConnectors} 
       onClick={onClick} 
-      connectorSources={connectorSources}
+      connectorSources={connectorSourcesMenu}
     />
   );
 };
@@ -66,7 +92,7 @@ const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: 
 const ChatPage = () => {
   const [token, setToken] = React.useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(true);
-  const [activeTab, setActiveTab] = useState("SERPER_API");
+  const [activeTab, setActiveTab] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sourcesPage, setSourcesPage] = useState(1);
   const [expandedSources, setExpandedSources] = useState(false);
@@ -193,17 +219,41 @@ const ChatPage = () => {
     }
   });
 
-  // Log messages whenever they update and extract connector sources from annotations
+  // Log messages whenever they update and extract annotations from the latest assistant message if available
   useEffect(() => {
     console.log('Messages updated:', messages);
     
-    // Extract connector sources from the latest assistant message annotations if available
+    // Extract annotations from the latest assistant message if available
     const assistantMessages = messages.filter(msg => msg.role === 'assistant');
     if (assistantMessages.length > 0) {
       const latestAssistantMessage = assistantMessages[assistantMessages.length - 1];
       if (latestAssistantMessage?.annotations) {
-        // Update connector sources from annotations
-        setConnectorSources(latestAssistantMessage.annotations);
+        const annotations = latestAssistantMessage.annotations as any[];
+        
+        // Debug log to track streaming annotations
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Streaming annotations:', annotations);
+          
+          // Log counts of each annotation type
+          const terminalInfoCount = annotations.filter(a => a.type === 'TERMINAL_INFO').length;
+          const sourcesCount = annotations.filter(a => a.type === 'SOURCES').length;
+          const answerCount = annotations.filter(a => a.type === 'ANSWER').length;
+          
+          console.log(`Annotation counts - Terminal: ${terminalInfoCount}, Sources: ${sourcesCount}, Answer: ${answerCount}`);
+        }
+        
+        // Process SOURCES annotation - get the last one to ensure we have the latest
+        const sourcesAnnotations = annotations.filter(
+          (annotation) => annotation.type === 'SOURCES'
+        );
+        
+        if (sourcesAnnotations.length > 0) {
+          // Get the last SOURCES annotation to ensure we have the most recent one
+          const latestSourcesAnnotation = sourcesAnnotations[sourcesAnnotations.length - 1];
+          if (latestSourcesAnnotation.content) {
+            setConnectorSources(latestSourcesAnnotation.content);
+          }
+        }
       }
     }
   }, [messages]);
@@ -237,6 +287,13 @@ const ChatPage = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Set activeTab when connectorSources change
+  useEffect(() => {
+    if (connectorSources.length > 0) {
+      setActiveTab(connectorSources[0].type);
+    }
+  }, [connectorSources]);
 
   // Get total sources count for a connector type
   const getSourcesCount = (connectorType: string) => {
@@ -291,7 +348,47 @@ const ChatPage = () => {
 
   // Function to get a citation source by ID
   const getCitationSource = (citationId: number): Source | null => {
-    return getCitationSourceUtil(citationId, connectorSources);
+    if (!messages || messages.length === 0) return null;
+    
+    // Find the latest assistant message
+    const assistantMessages = messages.filter(msg => msg.role === 'assistant');
+    if (assistantMessages.length === 0) return null;
+    
+    const latestAssistantMessage = assistantMessages[assistantMessages.length - 1];
+    if (!latestAssistantMessage?.annotations) return null;
+    
+    // Find all SOURCES annotations
+    const annotations = latestAssistantMessage.annotations as any[];
+    const sourcesAnnotations = annotations.filter(
+      (annotation) => annotation.type === 'SOURCES'
+    );
+    
+    // Get the latest SOURCES annotation
+    if (sourcesAnnotations.length === 0) return null;
+    const latestSourcesAnnotation = sourcesAnnotations[sourcesAnnotations.length - 1];
+    
+    if (!latestSourcesAnnotation.content) return null;
+    
+    // Flatten all sources from all connectors
+    const allSources: Source[] = [];
+    latestSourcesAnnotation.content.forEach((connector: ConnectorSource) => {
+      if (connector.sources && Array.isArray(connector.sources)) {
+        connector.sources.forEach((source: SourceItem) => {
+          allSources.push({
+            id: source.id,
+            title: source.title,
+            description: source.description,
+            url: source.url,
+            connectorType: connector.type
+          });
+        });
+      }
+    });
+    
+    // Find the source with the matching ID
+    const foundSource = allSources.find(source => source.id === citationId);
+    
+    return foundSource || null;
   };
 
   return (
@@ -343,22 +440,30 @@ const ChatPage = () => {
                           <span className="mr-1">$</span>
                           <span>surfsense-researcher</span>
                         </div>
-                        {dummyStatusMessages.map((item) => (
-                          <div key={item.id} className={`py-0.5 flex items-start ${item.type === 'success' ? 'text-green-400' :
-                            item.type === 'error' ? 'text-red-400' :
-                              'text-gray-300'
-                            }`}>
-                            <span className="text-gray-500 text-xs mr-2 w-10 flex-shrink-0">[{item.timestamp}]</span>
-                            <span className="mr-2 opacity-70">
-                              {item.type === 'success' ? '✓' :
-                                item.type === 'error' ? '✗' :
-                                  '>'}
-                            </span>
-                            <span>
-                              {item.message}
-                            </span>
-                          </div>
-                        ))}
+                        {message.annotations && (() => {
+                          // Get all TERMINAL_INFO annotations
+                          const terminalInfoAnnotations = (message.annotations as any[])
+                            .filter(a => a.type === 'TERMINAL_INFO');
+                          
+                          // Get the latest TERMINAL_INFO annotation
+                          const latestTerminalInfo = terminalInfoAnnotations.length > 0 
+                            ? terminalInfoAnnotations[terminalInfoAnnotations.length - 1] 
+                            : null;
+                          
+                          // Render the content of the latest TERMINAL_INFO annotation
+                          return latestTerminalInfo?.content.map((item: any, idx: number) => (
+                            <div key={idx} className="py-0.5 flex items-start text-gray-300">
+                              <span className="text-gray-500 text-xs mr-2 w-10 flex-shrink-0">[{String(idx).padStart(2, '0')}:{String(Math.floor(idx * 2)).padStart(2, '0')}]</span>
+                              <span className="mr-2 opacity-70">{'>'}</span>
+                              <span className={`
+                                ${item.type === 'info' ? 'text-blue-300' : ''}
+                                ${item.type === 'success' ? 'text-green-300' : ''}
+                                ${item.type === 'error' ? 'text-red-300' : ''}
+                                ${item.type === 'warning' ? 'text-yellow-300' : ''}
+                              `}>{item.text}</span>
+                            </div>
+                          ));
+                        })()}
                         <div className="mt-2 flex items-center">
                           <span className="text-gray-500 text-xs mr-2 w-10 flex-shrink-0">[00:13]</span>
                           <span className="text-green-400 mr-1">researcher@surfsense</span>
@@ -377,7 +482,11 @@ const ChatPage = () => {
                         <span className="font-medium">Sources</span>
                       </div>
 
-                      <Tabs defaultValue="SERPER_API" className="w-full" onValueChange={setActiveTab}>
+                      <Tabs 
+                        defaultValue={connectorSources.length > 0 ? connectorSources[0].type : "CRAWLED_URL"} 
+                        className="w-full" 
+                        onValueChange={setActiveTab}
+                      >
                         <div className="mb-4">
                           <div className="flex items-center">
                             <Button
@@ -574,7 +683,29 @@ const ChatPage = () => {
                     <div className="mb-6">
                       {showAnswer && (
                         <div className="prose dark:prose-invert max-w-none">
-                          <MarkdownViewer content={message.content} getCitationSource={getCitationSource} />
+                          {message.annotations && (() => {
+                            // Get all ANSWER annotations
+                            const answerAnnotations = (message.annotations as any[])
+                              .filter(a => a.type === 'ANSWER');
+                            
+                            // Get the latest ANSWER annotation
+                            const latestAnswer = answerAnnotations.length > 0 
+                              ? answerAnnotations[answerAnnotations.length - 1] 
+                              : null;
+                            
+                            // If we have a latest ANSWER annotation with content, render it
+                            if (latestAnswer?.content && latestAnswer.content.length > 0) {
+                              return (
+                                <MarkdownViewer 
+                                  content={latestAnswer.content.join('\n')} 
+                                  getCitationSource={getCitationSource} 
+                                />
+                              );
+                            }
+                            
+                            // Fallback to the message content if no ANSWER annotation is available
+                            return <MarkdownViewer content={message.content} getCitationSource={getCitationSource} />;
+                          })()}
                         </div>
                       )}
                     </div>
@@ -610,7 +741,7 @@ const ChatPage = () => {
               disabled={status !== 'ready'}
             />
             <div className="flex items-center justify-between px-2 py-1">
-            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
                 {/* Connector Selection Dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
@@ -629,7 +760,7 @@ const ChatPage = () => {
                     
                     {/* Connector selection grid */}
                     <div className="grid grid-cols-2 gap-4 py-4">
-                      {connectorSources.map((connector) => {
+                      {connectorSourcesMenu.map((connector) => {
                         const isSelected = selectedConnectors.includes(connector.type);
                         
                         return (
@@ -669,7 +800,7 @@ const ChatPage = () => {
                         Clear All
                       </Button>
                       <Button 
-                        onClick={() => setSelectedConnectors(connectorSources.map(c => c.type))}
+                        onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
                       >
                         Select All
                       </Button>

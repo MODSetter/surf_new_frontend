@@ -24,7 +24,7 @@ import {
   ResearchMode,
   researcherOptions
 } from '@/components/chat';
-import { connectorSources } from '@/components/chat/connector-sources';
+import { connectorSourcesMenu } from '@/components/chat/connector-sources';
 
 
 /**
@@ -35,7 +35,7 @@ const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: 
     <ConnectorButtonComponent 
       selectedConnectors={selectedConnectors} 
       onClick={onClick} 
-      connectorSources={connectorSources}
+      connectorSources={connectorSourcesMenu}
     />
   );
 };
@@ -187,7 +187,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
                     
                     {/* Connector selection grid */}
                     <div className="grid grid-cols-2 gap-4 py-4">
-                      {connectorSources.map((connector) => {
+                      {connectorSourcesMenu.map((connector) => {
                         const isSelected = selectedConnectors.includes(connector.type);
                         
                         return (
@@ -227,7 +227,7 @@ const ResearcherClient = ({ search_space_id }: ResearcherClientProps) => {
                         Clear All
                       </Button>
                       <Button 
-                        onClick={() => setSelectedConnectors(connectorSources.map(c => c.type))}
+                        onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
                       >
                         Select All
                       </Button>
