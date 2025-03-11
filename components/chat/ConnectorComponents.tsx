@@ -46,22 +46,22 @@ export const getConnectorIcon = (connectorType: string) => {
 
 export const researcherOptions: { value: ResearchMode; label: string; icon: React.ReactNode }[] = [
   {
-    value: 'general',
+    value: 'GENERAL',
     label: 'General',
     icon: getConnectorIcon('GENERAL')
   },
   {
-    value: 'deep',
+    value: 'DEEP',
     label: 'Deep',
     icon: getConnectorIcon('DEEP')
   },
   {
-    value: 'deeper',
+    value: 'DEEPER',
     label: 'Deeper',
     icon: getConnectorIcon('DEEPER')
   },
   {
-    value: 'deepest',
+    value: 'DEEPEST',
     label: 'Deepest',
     icon: getConnectorIcon('DEEPEST')
   }

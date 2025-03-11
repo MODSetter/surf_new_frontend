@@ -48,13 +48,7 @@ import {
 } from '@/components/chat';
 import { MarkdownViewer } from '@/components/markdown-viewer';
 import { connectorSourcesMenu } from '@/components/chat/connector-sources';
-
-// Define types for the new annotation structure
-interface TerminalInfoItem {
-  id: number;
-  text: string;
-  type: 'info' | 'success' | 'error' | 'warning';
-}
+import { Logo } from '@/components/Logo';
 
 interface SourceItem {
   id: number;
@@ -71,19 +65,14 @@ interface ConnectorSource {
   sources: SourceItem[];
 }
 
-interface Annotation {
-  type: 'TERMINAL_INFO' | 'SOURCES' | 'ANSWER';
-  content: TerminalInfoItem[] | ConnectorSource[] | string[];
-}
-
 /**
  * Button that displays selected connectors and opens connector selection dialog
  */
 const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: string[], onClick: () => void }) => {
   return (
-    <ConnectorButtonComponent 
-      selectedConnectors={selectedConnectors} 
-      onClick={onClick} 
+    <ConnectorButtonComponent
+      selectedConnectors={selectedConnectors}
+      onClick={onClick}
       connectorSources={connectorSourcesMenu}
     />
   );
@@ -103,7 +92,7 @@ const ChatPage = () => {
   const tabsListRef = useRef<HTMLDivElement>(null);
   const [terminalExpanded, setTerminalExpanded] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>(["CRAWLED_URL"]);
-  const [researchMode, setResearchMode] = useState<ResearchMode>("general");
+  const [researchMode, setResearchMode] = useState<ResearchMode>("GENERAL");
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [connectorSources, setConnectorSources] = useState<any[]>([]);
@@ -112,7 +101,7 @@ const ChatPage = () => {
   const SOURCES_PER_PAGE = 5;
   const INITIAL_SOURCES_DISPLAY = 3;
 
-  const { search_space_id } = useParams();
+  const { search_space_id, chat_id } = useParams();
 
   // Get token from localStorage on client side only
   React.useEffect(() => {
@@ -201,7 +190,7 @@ const ChatPage = () => {
     }
   }, []);
 
-  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit, status } = useChat({
+  const { messages, input, handleInputChange, handleSubmit: handleChatSubmit, status, setMessages } = useChat({
     api: `${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chat`,
     streamProtocol: 'data',
     headers: {
@@ -220,34 +209,137 @@ const ChatPage = () => {
     }
   });
 
+  // Fetch chat details when component mounts
+  useEffect(() => {
+    const fetchChatDetails = async () => {
+      try {
+        if (!token) return; // Wait for token to be set
+
+        console.log('Fetching chat details for chat ID:', chat_id);
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${Number(chat_id)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chat details: ${response.statusText}`);
+        }
+
+        const chatData = await response.json();
+        console.log('Chat details fetched:', chatData);
+
+        // Set research mode from chat data
+        if (chatData.type) {
+          setResearchMode(chatData.type as ResearchMode);
+        }
+
+        // Set connectors from chat data
+        if (chatData.initial_connectors && Array.isArray(chatData.initial_connectors)) {
+          setSelectedConnectors(chatData.initial_connectors);
+        }
+
+        // Set messages from chat data
+        if (chatData.messages && Array.isArray(chatData.messages)) {
+          setMessages(chatData.messages);
+        }
+      } catch (err) {
+        console.error('Error fetching chat details:', err);
+      }
+    };
+
+    if (token) {
+      fetchChatDetails();
+    }
+  }, [token, chat_id, setMessages]);
+
+  // Update chat when a conversation exchange is complete
+  useEffect(() => {
+    const updateChat = async () => {
+      try {
+        // Only update when:
+        // 1. Status is ready (not loading)
+        // 2. We have messages
+        // 3. Last message is from assistant (completed response)
+        if (
+          status === 'ready' && 
+          messages.length > 0 && 
+          messages[messages.length - 1]?.role === 'assistant'
+        ) {
+          const token = localStorage.getItem('surfsense_bearer_token');
+          if (!token) return;
+          
+          // Find the first user message to use as title
+          const userMessages = messages.filter(msg => msg.role === 'user');
+          if (userMessages.length === 0) return;
+          
+          // Use the first user message as the title
+          const title = userMessages[0].content;
+          
+          
+          console.log('Updating chat with title:', title);
+          
+          // Update the chat
+          const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${Number(chat_id)}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              type: researchMode,
+              title: title,
+              initial_connectors: selectedConnectors,
+              messages: messages,
+              search_space_id: Number(search_space_id)
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to update chat: ${response.statusText}`);
+          }
+          
+          console.log('Chat updated successfully');
+        }
+      } catch (err) {
+        console.error('Error updating chat:', err);
+      }
+    };
+    
+    updateChat();
+  }, [messages, status, chat_id, researchMode, selectedConnectors, search_space_id]);
+
   // Log messages whenever they update and extract annotations from the latest assistant message if available
   useEffect(() => {
     console.log('Messages updated:', messages);
-    
+
     // Extract annotations from the latest assistant message if available
     const assistantMessages = messages.filter(msg => msg.role === 'assistant');
     if (assistantMessages.length > 0) {
       const latestAssistantMessage = assistantMessages[assistantMessages.length - 1];
       if (latestAssistantMessage?.annotations) {
         const annotations = latestAssistantMessage.annotations as any[];
-        
+
         // Debug log to track streaming annotations
         if (process.env.NODE_ENV === 'development') {
           console.log('Streaming annotations:', annotations);
-          
+
           // Log counts of each annotation type
           const terminalInfoCount = annotations.filter(a => a.type === 'TERMINAL_INFO').length;
           const sourcesCount = annotations.filter(a => a.type === 'SOURCES').length;
           const answerCount = annotations.filter(a => a.type === 'ANSWER').length;
-          
+
           console.log(`Annotation counts - Terminal: ${terminalInfoCount}, Sources: ${sourcesCount}, Answer: ${answerCount}`);
         }
-        
+
         // Process SOURCES annotation - get the last one to ensure we have the latest
         const sourcesAnnotations = annotations.filter(
           (annotation) => annotation.type === 'SOURCES'
         );
-        
+
         if (sourcesAnnotations.length > 0) {
           // Get the last SOURCES annotation to ensure we have the most recent one
           const latestSourcesAnnotation = sourcesAnnotations[sourcesAnnotations.length - 1];
@@ -260,7 +352,7 @@ const ChatPage = () => {
         const terminalInfoAnnotations = annotations.filter(
           (annotation) => annotation.type === 'TERMINAL_INFO'
         );
-        
+
         if (terminalInfoAnnotations.length > 0) {
           // Schedule scrolling after the DOM has been updated
           setTimeout(scrollTerminalToBottom, 100);
@@ -374,26 +466,26 @@ const ChatPage = () => {
   // Function to get a citation source by ID
   const getCitationSource = (citationId: number): Source | null => {
     if (!messages || messages.length === 0) return null;
-    
+
     // Find the latest assistant message
     const assistantMessages = messages.filter(msg => msg.role === 'assistant');
     if (assistantMessages.length === 0) return null;
-    
+
     const latestAssistantMessage = assistantMessages[assistantMessages.length - 1];
     if (!latestAssistantMessage?.annotations) return null;
-    
+
     // Find all SOURCES annotations
     const annotations = latestAssistantMessage.annotations as any[];
     const sourcesAnnotations = annotations.filter(
       (annotation) => annotation.type === 'SOURCES'
     );
-    
+
     // Get the latest SOURCES annotation
     if (sourcesAnnotations.length === 0) return null;
     const latestSourcesAnnotation = sourcesAnnotations[sourcesAnnotations.length - 1];
-    
+
     if (!latestSourcesAnnotation.content) return null;
-    
+
     // Flatten all sources from all connectors
     const allSources: Source[] = [];
     latestSourcesAnnotation.content.forEach((connector: ConnectorSource) => {
@@ -409,16 +501,30 @@ const ChatPage = () => {
         });
       }
     });
-    
+
     // Find the source with the matching ID
     const foundSource = allSources.find(source => source.id === citationId);
-    
+
     return foundSource || null;
   };
 
   return (
     <>
-      <div className="flex flex-col min-h-[calc(100vh-4rem)] min-w-4xl max-w-4xl mx-auto px-4 py-8 overflow-x-hidden gap-4">
+
+      <div className="flex flex-col min-h-[calc(100vh-4rem)] min-w-4xl max-w-4xl mx-auto px-4 py-8 overflow-x-hidden justify-center gap-4">
+      {messages.length === 0 && (
+          <h2 className="flex gap-2 justify-center text-balance relative z-50 mx-auto mb-6 text-center text-2xl font-semibold tracking-tight text-gray-700 dark:text-neutral-300 md:text-7xl">
+            <Logo className='rounded-md' />
+            <div className='text-muted-foreground'>
+              Surf{""}
+              <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
+                <div className="text-black [text-shadow:0_0_rgba(0,0,0,0.1)] dark:text-white">
+                  <span className="">Sense</span>
+                </div>
+              </div>
+            </div>
+          </h2>
+        )}
         {messages?.map((message, index) => {
           if (message.role === 'user') {
             return (
@@ -456,7 +562,7 @@ const ChatPage = () => {
                         </div>
                       </div>
 
-                      <div 
+                      <div
                         ref={terminalMessagesRef}
                         className={`p-4 overflow-y-auto font-mono text-sm bg-gray-900 dark:bg-gray-950 text-gray-200 leading-relaxed ${terminalExpanded ? 'h-[400px]' : 'max-h-[200px]'} transition-all duration-300 relative`}
                       >
@@ -472,12 +578,12 @@ const ChatPage = () => {
                           // Get all TERMINAL_INFO annotations
                           const terminalInfoAnnotations = (message.annotations as any[])
                             .filter(a => a.type === 'TERMINAL_INFO');
-                          
+
                           // Get the latest TERMINAL_INFO annotation
-                          const latestTerminalInfo = terminalInfoAnnotations.length > 0 
-                            ? terminalInfoAnnotations[terminalInfoAnnotations.length - 1] 
+                          const latestTerminalInfo = terminalInfoAnnotations.length > 0
+                            ? terminalInfoAnnotations[terminalInfoAnnotations.length - 1]
                             : null;
-                          
+
                           // Render the content of the latest TERMINAL_INFO annotation
                           return latestTerminalInfo?.content.map((item: any, idx: number) => (
                             <div key={idx} className="py-0.5 flex items-start text-gray-300">
@@ -500,7 +606,7 @@ const ChatPage = () => {
                           <span className="mr-1">$</span>
                           <div className="h-4 w-2 bg-gray-400 animate-pulse"></div>
                         </div>
-                        
+
                         {/* Terminal scroll button */}
                         <div className="absolute bottom-4 right-4">
                           <Button
@@ -523,9 +629,9 @@ const ChatPage = () => {
                         <span className="font-medium">Sources</span>
                       </div>
 
-                      <Tabs 
-                        defaultValue={connectorSources.length > 0 ? connectorSources[0].type : "CRAWLED_URL"} 
-                        className="w-full" 
+                      <Tabs
+                        defaultValue={connectorSources.length > 0 ? connectorSources[0].type : "CRAWLED_URL"}
+                        className="w-full"
                         onValueChange={setActiveTab}
                       >
                         <div className="mb-4">
@@ -728,22 +834,22 @@ const ChatPage = () => {
                             // Get all ANSWER annotations
                             const answerAnnotations = (message.annotations as any[])
                               .filter(a => a.type === 'ANSWER');
-                            
+
                             // Get the latest ANSWER annotation
-                            const latestAnswer = answerAnnotations.length > 0 
-                              ? answerAnnotations[answerAnnotations.length - 1] 
+                            const latestAnswer = answerAnnotations.length > 0
+                              ? answerAnnotations[answerAnnotations.length - 1]
                               : null;
-                            
+
                             // If we have a latest ANSWER annotation with content, render it
                             if (latestAnswer?.content && latestAnswer.content.length > 0) {
                               return (
-                                <MarkdownViewer 
-                                  content={latestAnswer.content.join('\n')} 
-                                  getCitationSource={getCitationSource} 
+                                <MarkdownViewer
+                                  content={latestAnswer.content.join('\n')}
+                                  getCitationSource={getCitationSource}
                                 />
                               );
                             }
-                            
+
                             // Fallback to the message content if no ANSWER annotation is available
                             return <MarkdownViewer content={message.content} getCitationSource={getCitationSource} />;
                           })()}
@@ -786,9 +892,9 @@ const ChatPage = () => {
                 {/* Connector Selection Dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <ConnectorButton 
-                      selectedConnectors={selectedConnectors} 
-                      onClick={() => {}}
+                    <ConnectorButton
+                      selectedConnectors={selectedConnectors}
+                      onClick={() => { }}
                     />
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
@@ -798,20 +904,19 @@ const ChatPage = () => {
                         Choose which data sources to include in your research
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     {/* Connector selection grid */}
                     <div className="grid grid-cols-2 gap-4 py-4">
                       {connectorSourcesMenu.map((connector) => {
                         const isSelected = selectedConnectors.includes(connector.type);
-                        
+
                         return (
-                          <div 
-                            key={connector.id} 
-                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border hover:border-primary/50 hover:bg-muted'
-                            }`}
+                          <div
+                            key={connector.id}
+                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${isSelected
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-primary/50 hover:bg-muted'
+                              }`}
                             onClick={() => {
                               setSelectedConnectors(
                                 isSelected
@@ -832,15 +937,15 @@ const ChatPage = () => {
                         );
                       })}
                     </div>
-                    
+
                     <DialogFooter>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => setSelectedConnectors([])}
                       >
                         Clear All
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
                       >
                         Select All
@@ -872,7 +977,7 @@ const ChatPage = () => {
             </div>
           </form>
         </div>
-        
+
         {/* Reference for auto-scrolling */}
         <div ref={messagesEndRef} />
       </div>

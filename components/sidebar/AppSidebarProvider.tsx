@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { AppSidebar } from '@/components/sidebar/app-sidebar';
+import { iconMap } from '@/components/sidebar/app-sidebar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface Chat {
   created_at: string;
@@ -52,7 +63,7 @@ export function AppSidebarProvider({
   navSecondary, 
   navMain 
 }: AppSidebarProviderProps) {
-  const [recentChats, setRecentChats] = useState<{ name: string; url: string; icon: string }[]>([]);
+  const [recentChats, setRecentChats] = useState<{ name: string; url: string; icon: string; id: number; search_space_id: number; actions: { name: string; icon: string; onClick: () => void }[] }[]>([]);
   const [searchSpace, setSearchSpace] = useState<SearchSpace | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
@@ -61,6 +72,9 @@ export function AppSidebarProvider({
   const [chatError, setChatError] = useState<string | null>(null);
   const [searchSpaceError, setSearchSpaceError] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch user details
   useEffect(() => {
@@ -143,8 +157,27 @@ export function AppSidebarProvider({
         // Transform API response to the format expected by AppSidebar
         const formattedChats = chats.map(chat => ({
           name: chat.title || `Chat ${chat.id}`, // Fallback if title is empty
-          url: `/dashboard/${chat.search_space_id}/chat/${chat.id}`,
+          url: `/dashboard/${chat.search_space_id}/researcher/${chat.id}`,
           icon: 'MessageCircleMore',
+          id: chat.id,
+          search_space_id: chat.search_space_id,
+          actions: [
+            {
+              name: 'View Details',
+              icon: 'ExternalLink',
+              onClick: () => {
+                window.location.href = `/dashboard/${chat.search_space_id}/researcher/${chat.id}`;
+              }
+            },
+            {
+              name: 'Delete',
+              icon: 'Trash2',
+              onClick: () => {
+                setChatToDelete({ id: chat.id, name: chat.title || `Chat ${chat.id}` });
+                setDeleteDialogOpen(true);
+              }
+            }
+          ]
         }));
 
         setRecentChats(formattedChats);
@@ -167,6 +200,43 @@ export function AppSidebarProvider({
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
+
+  // Function to handle chat deletion
+  const handleDeleteChat = async () => {
+    if (!chatToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('surfsense_bearer_token');
+      if (!token) {
+        setIsDeleting(false);
+        return;
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${chatToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete chat: ${response.statusText}`);
+      }
+      
+      // Close dialog and refresh chats
+      setDeleteDialogOpen(false);
+      setChatToDelete(null);
+      
+      // Refresh the chat list
+      setRecentChats(prevChats => prevChats.filter(chat => chat.id !== chatToDelete.id));
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Fetch search space details
   useEffect(() => {
@@ -218,7 +288,10 @@ export function AppSidebarProvider({
     ? [{ 
         name: chatError ? "Error loading chats" : "No recent chats", 
         url: "#", 
-        icon: chatError ? "AlertCircle" : "MessageCircleMore" 
+        icon: chatError ? "AlertCircle" : "MessageCircleMore",
+        id: 0,
+        search_space_id: Number(searchSpaceId),
+        actions: []
       }] 
     : [];
 
@@ -242,11 +315,55 @@ export function AppSidebarProvider({
   };
 
   return (
-    <AppSidebar
-      user={customUser}
-      navSecondary={updatedNavSecondary}
-      navMain={navMain}
-      RecentChats={displayChats}
-    />
+    <>
+      <AppSidebar
+        user={customUser}
+        navSecondary={updatedNavSecondary}
+        navMain={navMain}
+        RecentChats={displayChats}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              <span>Delete Chat</span>
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-medium">{chatToDelete?.name}</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteChat}
+              disabled={isDeleting}
+              className="gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 } 

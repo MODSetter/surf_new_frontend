@@ -12,6 +12,8 @@ import {
   SquareTerminal,
   AlertCircle,
   Info,
+  ExternalLink,
+  Trash2,
   type LucideIcon,
 } from "lucide-react"
 
@@ -41,7 +43,9 @@ export const iconMap: Record<string, LucideIcon> = {
   SquareLibrary,
   SquareTerminal,
   AlertCircle,
-  Info
+  Info,
+  ExternalLink,
+  Trash2
 }
 
 const defaultData = {
@@ -156,6 +160,13 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     name: string
     url: string
     icon: string // Changed to string (icon name)
+    id?: number
+    search_space_id?: number
+    actions?: {
+      name: string
+      icon: string
+      onClick: () => void
+    }[]
   }[]
 }
 

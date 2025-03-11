@@ -47,4 +47,4 @@ export interface ToolInvocationUIPart {
 }
 
 
-export type ResearchMode = 'general' | 'deep' | 'deeper' | 'deepest'; 
+export type ResearchMode = 'GENERAL' | 'DEEP' | 'DEEPER' | 'DEEPEST'; 

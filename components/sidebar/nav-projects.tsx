@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  ExternalLink,
   Folder,
   MoreHorizontal,
   Share,
@@ -25,6 +26,21 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+// Map of icon names to their components
+const actionIconMap: Record<string, LucideIcon> = {
+  ExternalLink,
+  Folder,
+  Share,
+  Trash2,
+  MoreHorizontal
+}
+
+interface ChatAction {
+  name: string;
+  icon: string;
+  onClick: () => void;
+}
+
 export function NavProjects({
   projects,
 }: {
@@ -32,6 +48,7 @@ export function NavProjects({
     name: string
     url: string
     icon: LucideIcon
+    actions?: ChatAction[]
   }[]
 }) {
   const { isMobile } = useSidebar()
@@ -42,11 +59,9 @@ export function NavProjects({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </a>
+            <SidebarMenuButton>
+              <item.icon />
+              <span>{item.name}</span>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -60,16 +75,31 @@ export function NavProjects({
                 side={isMobile ? "bottom" : "right"}
                 align={isMobile ? "end" : "start"}
               >
-                <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Chat</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Chat</span>
-                </DropdownMenuItem>
+                {item.actions ? (
+                  // Use the actions provided by the item
+                  item.actions.map((action) => {
+                    const ActionIcon = actionIconMap[action.icon] || Folder;
+                    return (
+                      <DropdownMenuItem key={action.name} onClick={action.onClick}>
+                        <ActionIcon className="text-muted-foreground" />
+                        <span>{action.name}</span>
+                      </DropdownMenuItem>
+                    );
+                  })
+                ) : (
+                  // Default actions if none provided
+                  <>
+                    <DropdownMenuItem>
+                      <Folder className="text-muted-foreground" />
+                      <span>View Chat</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Trash2 className="text-muted-foreground" />
+                      <span>Delete Chat</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
