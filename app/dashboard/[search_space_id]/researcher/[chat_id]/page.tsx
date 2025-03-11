@@ -36,7 +36,6 @@ import {
   getFilteredSources as getFilteredSourcesUtil,
   getPaginatedDialogSources as getPaginatedDialogSourcesUtil,
   getSourcesCount as getSourcesCountUtil,
-  getCitationSource as getCitationSourceUtil,
   useScrollToBottom,
   updateScrollIndicators as updateScrollIndicatorsUtil,
   useScrollIndicators,
@@ -216,7 +215,7 @@ const ChatPage = () => {
         if (!token) return; // Wait for token to be set
 
         console.log('Fetching chat details for chat ID:', chat_id);
-        
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${Number(chat_id)}`, {
           method: 'GET',
           headers: {
@@ -265,23 +264,23 @@ const ChatPage = () => {
         // 2. We have messages
         // 3. Last message is from assistant (completed response)
         if (
-          status === 'ready' && 
-          messages.length > 0 && 
+          status === 'ready' &&
+          messages.length > 0 &&
           messages[messages.length - 1]?.role === 'assistant'
         ) {
           const token = localStorage.getItem('surfsense_bearer_token');
           if (!token) return;
-          
+
           // Find the first user message to use as title
           const userMessages = messages.filter(msg => msg.role === 'user');
           if (userMessages.length === 0) return;
-          
+
           // Use the first user message as the title
           const title = userMessages[0].content;
-          
-          
+
+
           console.log('Updating chat with title:', title);
-          
+
           // Update the chat
           const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${Number(chat_id)}`, {
             method: 'PUT',
@@ -297,18 +296,18 @@ const ChatPage = () => {
               search_space_id: Number(search_space_id)
             })
           });
-          
+
           if (!response.ok) {
             throw new Error(`Failed to update chat: ${response.statusText}`);
           }
-          
+
           console.log('Chat updated successfully');
         }
       } catch (err) {
         console.error('Error updating chat:', err);
       }
     };
-    
+
     updateChat();
   }, [messages, status, chat_id, researchMode, selectedConnectors, search_space_id]);
 
@@ -510,9 +509,8 @@ const ChatPage = () => {
 
   return (
     <>
-
       <div className="flex flex-col min-h-[calc(100vh-4rem)] min-w-4xl max-w-4xl mx-auto px-4 py-8 overflow-x-hidden justify-center gap-4">
-      {messages.length === 0 && (
+        {messages.length === 0 && (
           <h2 className="flex gap-2 justify-center text-balance relative z-50 mx-auto mb-6 text-center text-2xl font-semibold tracking-tight text-gray-700 dark:text-neutral-300 md:text-7xl">
             <Logo className='rounded-md' />
             <div className='text-muted-foreground'>
