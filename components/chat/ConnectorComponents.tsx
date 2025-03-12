@@ -60,11 +60,6 @@ export const researcherOptions: { value: ResearchMode; label: string; icon: Reac
     label: 'Deeper',
     icon: getConnectorIcon('DEEPER')
   },
-  {
-    value: 'DEEPEST',
-    label: 'Deepest',
-    icon: getConnectorIcon('DEEPEST')
-  }
 ]
 
 /**

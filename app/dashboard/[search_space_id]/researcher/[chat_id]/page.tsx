@@ -4,7 +4,6 @@ import { useChat } from '@ai-sdk/react';
 import { useParams } from 'next/navigation';
 import {
   Loader2,
-  ArrowUp,
   X,
   Search,
   ExternalLink,
@@ -13,7 +12,8 @@ import {
   Check,
   ArrowDown,
   CircleUser,
-  Database
+  Database,
+  SendHorizontal
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -876,104 +876,103 @@ const ChatPage = () => {
 
         {/* New Chat Input Form */}
         <div className="py-2 px-4 border border-border rounded-lg bg-background">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} className="flex items-center gap-3">
             <Input
               type="text"
-              placeholder={status}
+              placeholder={"Search about..."}
               value={input}
               onChange={handleInputChange}
               className="no-shadow-input border-0 focus-visible:ring-offset-0 focus-visible:ring-0 resize-none overflow-auto w-full flex-1 bg-transparent p-3 pb-1.5 text-sm outline-none placeholder:text-muted-foreground"
               disabled={status !== 'ready'}
             />
-            <div className="flex items-center justify-between px-2 py-1">
-              <div className="flex items-center gap-4">
-                {/* Connector Selection Dialog */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <ConnectorButton
-                      selectedConnectors={selectedConnectors}
-                      onClick={() => { }}
-                    />
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Select Connectors</DialogTitle>
-                      <DialogDescription>
-                        Choose which data sources to include in your research
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    {/* Connector selection grid */}
-                    <div className="grid grid-cols-2 gap-4 py-4">
-                      {connectorSourcesMenu.map((connector) => {
-                        const isSelected = selectedConnectors.includes(connector.type);
-
-                        return (
-                          <div
-                            key={connector.id}
-                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${isSelected
-                              ? 'border-primary bg-primary/10'
-                              : 'border-border hover:border-primary/50 hover:bg-muted'
-                              }`}
-                            onClick={() => {
-                              setSelectedConnectors(
-                                isSelected
-                                  ? selectedConnectors.filter((type) => type !== connector.type)
-                                  : [...selectedConnectors, connector.type]
-                              );
-                            }}
-                            role="checkbox"
-                            aria-checked={isSelected}
-                            tabIndex={0}
-                          >
-                            <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
-                              {getConnectorIcon(connector.type)}
-                            </div>
-                            <span className="flex-1 text-sm font-medium">{connector.name}</span>
-                            {isSelected && <Check className="h-4 w-4 text-primary" />}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedConnectors([])}
-                      >
-                        Clear All
-                      </Button>
-                      <Button
-                        onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
-                      >
-                        Select All
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Research Mode Segmented Control */}
-                <SegmentedControl<ResearchMode>
-                  value={researchMode}
-                  onChange={setResearchMode}
-                  options={researcherOptions}
-                />
-              </div>
-
-              {/* Send button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                type="submit"
-                disabled={status !== 'ready' || !input.trim()}
-                aria-label="Send message"
-              >
-                <ArrowUp className="h-4 w-4 text-primary" />
-                <span className="sr-only">Send</span>
-              </Button>
-            </div>
+            {/* Send button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              type="submit"
+              disabled={status !== 'ready' || !input.trim()}
+              aria-label="Send message"
+            >
+              <SendHorizontal className="h-4 w-4 text-primary" />
+              <span className="sr-only">Send</span>
+            </Button>
           </form>
+          <div className="flex items-center justify-between px-2 py-1 mt-8">
+            <div className="flex items-center gap-4">
+              {/* Connector Selection Dialog */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <ConnectorButton
+                    selectedConnectors={selectedConnectors}
+                    onClick={() => { }}
+                  />
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select Connectors</DialogTitle>
+                    <DialogDescription>
+                      Choose which data sources to include in your research
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Connector selection grid */}
+                  <div className="grid grid-cols-2 gap-4 py-4">
+                    {connectorSourcesMenu.map((connector) => {
+                      const isSelected = selectedConnectors.includes(connector.type);
+
+                      return (
+                        <div
+                          key={connector.id}
+                          className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${isSelected
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50 hover:bg-muted'
+                            }`}
+                          onClick={() => {
+                            setSelectedConnectors(
+                              isSelected
+                                ? selectedConnectors.filter((type) => type !== connector.type)
+                                : [...selectedConnectors, connector.type]
+                            );
+                          }}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                        >
+                          <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
+                            {getConnectorIcon(connector.type)}
+                          </div>
+                          <span className="flex-1 text-sm font-medium">{connector.name}</span>
+                          {isSelected && <Check className="h-4 w-4 text-primary" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedConnectors([])}
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
+                    >
+                      Select All
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Research Mode Segmented Control */}
+              <SegmentedControl<ResearchMode>
+                value={researchMode}
+                onChange={setResearchMode}
+                options={researcherOptions}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Reference for auto-scrolling */}
