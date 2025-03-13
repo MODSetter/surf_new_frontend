@@ -70,7 +70,6 @@ import {
     CircleAlert,
     CircleX,
     Columns3,
-    Ellipsis,
     Filter,
     ListFilter,
     Plus,

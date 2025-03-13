@@ -25,6 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
 
 // Map of icon names to their components
 const actionIconMap: Record<string, LucideIcon> = {
@@ -48,10 +49,15 @@ export function NavProjects({
     name: string
     url: string
     icon: LucideIcon
+    id?: number
+    search_space_id?: number
     actions?: ChatAction[]
   }[]
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  
+  const searchSpaceId = projects[0]?.search_space_id || ""
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -105,9 +111,9 @@ export function NavProjects({
           </SidebarMenuItem>
         ))}
         <SidebarMenuItem>
-          <SidebarMenuButton>
+          <SidebarMenuButton onClick={() => router.push(`/dashboard/${searchSpaceId}/chats`)}>
             <MoreHorizontal />
-            <span>More</span>
+            <span>View All Chats</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

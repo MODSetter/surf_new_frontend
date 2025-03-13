@@ -20,13 +20,13 @@ export const getConnectorIcon = (connectorType: string) => {
   const iconProps = { className: "h-4 w-4" };
   
   switch(connectorType) {
-    case 'CREAWLED_URL':
-      return <Link {...iconProps} />;
+    case 'CRAWLED_URL':
+      return <Globe {...iconProps} />;
     case 'FILE':
         return <File {...iconProps} />;
     case 'SERPER_API':
     case 'TAVILY_API':
-      return <Globe {...iconProps} />;
+      return <Link {...iconProps} />;
     case 'ACADEMIC_API':
     case 'ARXIV_API':
     case 'BOOKS_API':

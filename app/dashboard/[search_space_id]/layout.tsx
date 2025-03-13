@@ -17,7 +17,7 @@ const layout = async ({ params, children }: { params: { search_space_id: string 
   const customNavSecondary = [
     {
       title: `All Search Spaces`,
-      url: "/dashboard",
+      url: `#`,
       icon: "Info",
     },
     {
