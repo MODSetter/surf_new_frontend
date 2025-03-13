@@ -10,7 +10,8 @@ import {
   Microscope,
   Telescope,
   File,
-  Link
+  Link,
+  Slack
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Connector, ResearchMode } from './types';
@@ -27,12 +28,10 @@ export const getConnectorIcon = (connectorType: string) => {
     case 'SERPER_API':
     case 'TAVILY_API':
       return <Link {...iconProps} />;
-    case 'ACADEMIC_API':
-    case 'ARXIV_API':
-    case 'BOOKS_API':
+    case 'SLACK_CONNECTOR':
+      return <Slack {...iconProps} />;
+    case 'NOTION_CONNECTOR':
       return <BookOpen {...iconProps} />;
-    case 'TWITTER_API':
-      return <X {...iconProps} />;
     case 'DEEP':
       return <Sparkles {...iconProps} />;
     case 'DEEPER':

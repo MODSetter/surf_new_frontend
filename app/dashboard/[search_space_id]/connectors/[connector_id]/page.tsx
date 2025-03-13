@@ -9,7 +9,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Info, Loader2 } from "lucide-react";
 
-import { ConnectorService, Connector, getConnectorTypeDisplay } from "@/hooks/use-connectors";
+import { useSearchSourceConnectors, SearchSourceConnector } from "@/hooks/useSearchSourceConnectors";
 import {
   Form,
   FormControl,
@@ -44,6 +44,16 @@ const apiConnectorFormSchema = z.object({
   }),
 });
 
+// Helper function to get connector type display name
+const getConnectorTypeDisplay = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    "SERPER_API": "Serper API",
+    "TAVILY_API": "Tavily API",
+    // Add other connector types here as needed
+  };
+  return typeMap[type] || type;
+};
+
 // Define the type for the form values
 type ApiConnectorFormValues = z.infer<typeof apiConnectorFormSchema>;
 
@@ -53,7 +63,8 @@ export default function EditConnectorPage() {
   const searchSpaceId = params.search_space_id as string;
   const connectorId = parseInt(params.connector_id as string, 10);
   
-  const [connector, setConnector] = useState<Connector | null>(null);
+  const { connectors, updateConnector } = useSearchSourceConnectors();
+  const [connector, setConnector] = useState<SearchSourceConnector | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -75,36 +86,33 @@ export default function EditConnectorPage() {
     return fieldMap[connectorType] || "";
   };
 
-  // Fetch connector data
+  // Find connector in the list
   useEffect(() => {
-    const fetchConnector = async () => {
-      try {
-        const data = await ConnectorService.getConnector(connectorId);
-        setConnector(data);
-        
-        // Check if connector type is supported
-        const apiKeyField = getApiKeyFieldName(data.connector_type);
-        if (apiKeyField) {
-          form.reset({
-            name: data.name,
-            api_key: data.config[apiKeyField] || "",
-          });
-        } else {
-          // Redirect if not a supported connector type
-          toast.error("This connector type is not supported for editing");
-          router.push(`/dashboard/${searchSpaceId}/connectors`);
-        }
-      } catch (error) {
-        console.error("Error fetching connector:", error);
-        toast.error("Failed to load connector");
+    const currentConnector = connectors.find(c => c.id === connectorId);
+    
+    if (currentConnector) {
+      setConnector(currentConnector);
+      
+      // Check if connector type is supported
+      const apiKeyField = getApiKeyFieldName(currentConnector.connector_type);
+      if (apiKeyField) {
+        form.reset({
+          name: currentConnector.name,
+          api_key: currentConnector.config[apiKeyField] || "",
+        });
+      } else {
+        // Redirect if not a supported connector type
+        toast.error("This connector type is not supported for editing");
         router.push(`/dashboard/${searchSpaceId}/connectors`);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchConnector();
-  }, [connectorId, form, router, searchSpaceId]);
+      
+      setIsLoading(false);
+    } else if (!isLoading && connectors.length > 0) {
+      // If connectors are loaded but this one isn't found
+      toast.error("Connector not found");
+      router.push(`/dashboard/${searchSpaceId}/connectors`);
+    }
+  }, [connectors, connectorId, form, router, searchSpaceId, isLoading]);
 
   // Handle form submission
   const onSubmit = async (values: ApiConnectorFormValues) => {
@@ -114,7 +122,7 @@ export default function EditConnectorPage() {
     try {
       const apiKeyField = getApiKeyFieldName(connector.connector_type);
       
-      await ConnectorService.updateConnector(connectorId, {
+      await updateConnector(connectorId, {
         name: values.name,
         connector_type: connector.connector_type,
         config: {

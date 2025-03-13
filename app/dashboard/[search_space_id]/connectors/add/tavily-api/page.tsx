@@ -9,7 +9,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Info, Loader2 } from "lucide-react";
 
-import { ConnectorService } from "@/hooks/use-connectors";
+import { useSearchSourceConnectors } from "@/hooks/useSearchSourceConnectors";
 import {
   Form,
   FormControl,
@@ -53,6 +53,7 @@ export default function TavilyApiPage() {
   const params = useParams();
   const searchSpaceId = params.search_space_id as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createConnector } = useSearchSourceConnectors();
 
   // Initialize the form
   const form = useForm<TavilyApiFormValues>({
@@ -67,12 +68,14 @@ export default function TavilyApiPage() {
   const onSubmit = async (values: TavilyApiFormValues) => {
     setIsSubmitting(true);
     try {
-      await ConnectorService.createConnector({
+      await createConnector({
         name: values.name,
         connector_type: "TAVILY_API",
         config: {
           TAVILY_API_KEY: values.api_key,
         },
+        is_indexable: false,
+        last_indexed_at: null,
       });
 
       toast.success("Tavily API connector created successfully!");

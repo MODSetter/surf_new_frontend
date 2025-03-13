@@ -11,9 +11,10 @@ export type Source = {
 };
 
 export type Connector = {
+  id: number;
   type: string;
   name: string;
-  sources: Source[];
+  sources?: Source[];
 };
 
 export type StatusMessage = {

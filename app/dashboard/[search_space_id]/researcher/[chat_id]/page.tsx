@@ -46,8 +46,9 @@ import {
   researcherOptions
 } from '@/components/chat';
 import { MarkdownViewer } from '@/components/markdown-viewer';
-import { connectorSourcesMenu } from '@/components/chat/connector-sources';
+import { connectorSourcesMenu as defaultConnectorSourcesMenu } from '@/components/chat/connector-sources';
 import { Logo } from '@/components/Logo';
+import { useSearchSourceConnectors } from '@/hooks';
 
 interface SourceItem {
   id: number;
@@ -68,12 +69,171 @@ interface ConnectorSource {
  * Button that displays selected connectors and opens connector selection dialog
  */
 const ConnectorButton = ({ selectedConnectors, onClick }: { selectedConnectors: string[], onClick: () => void }) => {
+  const { connectorSourceItems } = useSearchSourceConnectors();
+  
   return (
     <ConnectorButtonComponent
       selectedConnectors={selectedConnectors}
       onClick={onClick}
-      connectorSources={connectorSourcesMenu}
+      connectorSources={connectorSourceItems}
     />
+  );
+};
+
+// Create a wrapper component for the sources dialog content
+const SourcesDialogContent = ({ 
+  connector, 
+  sourceFilter, 
+  expandedSources, 
+  sourcesPage, 
+  setSourcesPage,
+  setSourceFilter,
+  setExpandedSources,
+  isLoadingMore 
+}: { 
+  connector: any; 
+  sourceFilter: string; 
+  expandedSources: boolean; 
+  sourcesPage: number; 
+  setSourcesPage: React.Dispatch<React.SetStateAction<number>>;
+  setSourceFilter: React.Dispatch<React.SetStateAction<string>>;
+  setExpandedSources: React.Dispatch<React.SetStateAction<boolean>>;
+  isLoadingMore: boolean;
+}) => {
+  // Safely access sources with fallbacks
+  const sources = connector?.sources || [];
+  
+  // Safe versions of utility functions
+  const getFilteredSourcesSafe = () => {
+    if (!sources.length) return [];
+    return getFilteredSourcesUtil(connector, sourceFilter);
+  };
+  
+  const getPaginatedSourcesSafe = () => {
+    if (!sources.length) return [];
+    return getPaginatedDialogSourcesUtil(
+      connector,
+      sourceFilter,
+      expandedSources,
+      sourcesPage,
+      5 // SOURCES_PER_PAGE
+    );
+  };
+  
+  const filteredSources = getFilteredSourcesSafe() || [];
+  const paginatedSources = getPaginatedSourcesSafe() || [];
+  
+  // Description text
+  const descriptionText = sourceFilter
+    ? `Found ${filteredSources.length} sources matching "${sourceFilter}"`
+    : `Viewing ${paginatedSources.length} of ${sources.length} sources`;
+    
+  if (paginatedSources.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>No sources found matching "{sourceFilter}"</p>
+        <Button
+          variant="ghost"
+          className="mt-2 text-sm"
+          onClick={() => setSourceFilter("")}
+        >
+          Clear search
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          {getConnectorIcon(connector.type)}
+          <span>{connector.name} Sources</span>
+        </DialogTitle>
+        <DialogDescription className="dark:text-gray-400">
+          {descriptionText}
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="relative my-4">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+        <Input
+          placeholder="Search sources..."
+          className="pl-8 pr-4"
+          value={sourceFilter}
+          onChange={(e) => {
+            setSourceFilter(e.target.value);
+            setSourcesPage(1);
+            setExpandedSources(false);
+          }}
+        />
+        {sourceFilter && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4"
+            onClick={() => {
+              setSourceFilter("");
+              setSourcesPage(1);
+              setExpandedSources(false);
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-3 mt-4">
+        {paginatedSources.map((source: any) => (
+          <Card key={source.id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                {getConnectorIcon(connector.type)}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm">{source.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{source.description}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => window.open(source.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        ))}
+
+        {!expandedSources && paginatedSources.length < filteredSources.length && (
+          <Button
+            variant="ghost"
+            className="w-full text-sm text-gray-500 dark:text-gray-400"
+            onClick={() => {
+              setSourcesPage(prev => prev + 1);
+            }}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              `Load ${Math.min(5, filteredSources.length - paginatedSources.length)} More Sources`
+            )}
+          </Button>
+        )}
+
+        {expandedSources && filteredSources.length > 10 && (
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
+            Showing all {filteredSources.length} sources
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
@@ -96,6 +256,7 @@ const ChatPage = () => {
   const [currentDate, setCurrentDate] = useState<string>('');
   const [connectorSources, setConnectorSources] = useState<any[]>([]);
   const terminalMessagesRef = useRef<HTMLDivElement>(null);
+  const { connectorSourceItems, isLoading: isLoadingConnectors } = useSearchSourceConnectors();
 
   const SOURCES_PER_PAGE = 5;
   const INITIAL_SOURCES_DISPLAY = 3;
@@ -446,20 +607,16 @@ const ChatPage = () => {
     return getMainViewSourcesUtil(connector, INITIAL_SOURCES_DISPLAY);
   };
 
-  // Function to get filtered sources for the dialog
-  const getFilteredSources = (connector: any) => {
+  // Function to get filtered sources for the dialog with null check
+  const getFilteredSourcesWithCheck = (connector: any, sourceFilter: string) => {
+    if (!connector?.sources) return [];
     return getFilteredSourcesUtil(connector, sourceFilter);
   };
 
-  // Function to get paginated and filtered sources for the dialog
-  const getPaginatedDialogSources = (connector: any) => {
-    return getPaginatedDialogSourcesUtil(
-      connector,
-      sourceFilter,
-      expandedSources,
-      sourcesPage,
-      SOURCES_PER_PAGE
-    );
+  // Function to get paginated dialog sources with null check
+  const getPaginatedDialogSourcesWithCheck = (connector: any, sourceFilter: string, expandedSources: boolean, sourcesPage: number, sourcesPerPage: number) => {
+    if (!connector?.sources) return [];
+    return getPaginatedDialogSourcesUtil(connector, sourceFilter, expandedSources, sourcesPage, sourcesPerPage);
   };
 
   // Function to get a citation source by ID
@@ -679,7 +836,7 @@ const ChatPage = () => {
                         {connectorSources.map(connector => (
                           <TabsContent key={connector.id} value={connector.type} className="mt-0">
                             <div className="space-y-3">
-                              {getMainViewSources(connector).map((source) => (
+                              {getMainViewSources(connector).map((source: any) => (
                                 <Card key={source.id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
                                   <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
@@ -709,112 +866,16 @@ const ChatPage = () => {
                                     </Button>
                                   </DialogTrigger>
                                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto dark:border-gray-700">
-                                    <DialogHeader>
-                                      <DialogTitle className="flex items-center gap-2">
-                                        {getConnectorIcon(connector.type)}
-                                        <span>{connector.name} Sources</span>
-                                      </DialogTitle>
-                                      <DialogDescription className="dark:text-gray-400">
-                                        {sourceFilter ?
-                                          `Found ${getFilteredSources(connector).length} sources matching "${sourceFilter}"` :
-                                          `Viewing ${getPaginatedDialogSources(connector).length} of ${connector.sources.length} sources`
-                                        }
-                                      </DialogDescription>
-                                    </DialogHeader>
-
-                                    <div className="relative my-4">
-                                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                      <Input
-                                        placeholder="Search sources..."
-                                        className="pl-8 pr-4"
-                                        value={sourceFilter}
-                                        onChange={(e) => {
-                                          setSourceFilter(e.target.value);
-                                          setSourcesPage(1);
-                                          setExpandedSources(false);
-                                        }}
-                                      />
-                                      {sourceFilter && (
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4"
-                                          onClick={() => {
-                                            setSourceFilter("");
-                                            setSourcesPage(1);
-                                            setExpandedSources(false);
-                                          }}
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                      )}
-                                    </div>
-
-                                    <div className="space-y-3 mt-4">
-                                      {getPaginatedDialogSources(connector).length > 0 ? (
-                                        <>
-                                          {getPaginatedDialogSources(connector).map((source) => (
-                                            <Card key={source.id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-                                              <div className="flex items-start gap-3">
-                                                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                                                  {getConnectorIcon(connector.type)}
-                                                </div>
-                                                <div className="flex-1">
-                                                  <h3 className="font-medium text-sm">{source.title}</h3>
-                                                  <p className="text-sm text-gray-500 dark:text-gray-400">{source.description}</p>
-                                                </div>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-6 w-6"
-                                                  onClick={() => window.open(source.url, '_blank')}
-                                                >
-                                                  <ExternalLink className="h-4 w-4" />
-                                                </Button>
-                                              </div>
-                                            </Card>
-                                          ))}
-
-                                          {!expandedSources && getPaginatedDialogSources(connector).length < getFilteredSources(connector).length && (
-                                            <Button
-                                              variant="ghost"
-                                              className="w-full text-sm text-gray-500 dark:text-gray-400"
-                                              onClick={() => {
-                                                setSourcesPage(prev => prev + 1);
-                                              }}
-                                              disabled={isLoadingMore}
-                                            >
-                                              {isLoadingMore ? (
-                                                <div className="flex items-center gap-2">
-                                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                                  <span>Loading...</span>
-                                                </div>
-                                              ) : (
-                                                `Load ${Math.min(SOURCES_PER_PAGE, getFilteredSources(connector).length - getPaginatedDialogSources(connector).length)} More Sources`
-                                              )}
-                                            </Button>
-                                          )}
-
-                                          {expandedSources && getFilteredSources(connector).length > 10 && (
-                                            <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
-                                              Showing all {getFilteredSources(connector).length} sources
-                                            </div>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                          <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                          <p>No sources found matching "{sourceFilter}"</p>
-                                          <Button
-                                            variant="ghost"
-                                            className="mt-2 text-sm"
-                                            onClick={() => setSourceFilter("")}
-                                          >
-                                            Clear search
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
+                                    <SourcesDialogContent
+                                      connector={connector}
+                                      sourceFilter={sourceFilter}
+                                      expandedSources={expandedSources}
+                                      sourcesPage={sourcesPage}
+                                      setSourcesPage={setSourcesPage}
+                                      setSourceFilter={setSourceFilter}
+                                      setExpandedSources={setExpandedSources}
+                                      isLoadingMore={isLoadingMore}
+                                    />
                                   </DialogContent>
                                 </Dialog>
                               )}
@@ -918,49 +979,57 @@ const ChatPage = () => {
 
                   {/* Connector selection grid */}
                   <div className="grid grid-cols-2 gap-4 py-4">
-                    {connectorSourcesMenu.map((connector) => {
-                      const isSelected = selectedConnectors.includes(connector.type);
+                    {isLoadingConnectors ? (
+                      <div className="col-span-2 flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      connectorSourceItems.map((connector) => {
+                        const isSelected = selectedConnectors.includes(connector.type);
 
-                      return (
-                        <div
-                          key={connector.id}
-                          className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${isSelected
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50 hover:bg-muted'
-                            }`}
-                          onClick={() => {
-                            setSelectedConnectors(
-                              isSelected
-                                ? selectedConnectors.filter((type) => type !== connector.type)
-                                : [...selectedConnectors, connector.type]
-                            );
-                          }}
-                          role="checkbox"
-                          aria-checked={isSelected}
-                          tabIndex={0}
-                        >
-                          <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
-                            {getConnectorIcon(connector.type)}
+                        return (
+                          <div
+                            key={connector.id}
+                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${isSelected
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-primary/50 hover:bg-muted'
+                              }`}
+                            onClick={() => {
+                              setSelectedConnectors(
+                                isSelected
+                                  ? selectedConnectors.filter((type) => type !== connector.type)
+                                  : [...selectedConnectors, connector.type]
+                              );
+                            }}
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                          >
+                            <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-muted">
+                              {getConnectorIcon(connector.type)}
+                            </div>
+                            <span className="flex-1 text-sm font-medium">{connector.name}</span>
+                            {isSelected && <Check className="h-4 w-4 text-primary" />}
                           </div>
-                          <span className="flex-1 text-sm font-medium">{connector.name}</span>
-                          {isSelected && <Check className="h-4 w-4 text-primary" />}
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
 
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedConnectors([])}
-                    >
-                      Clear All
-                    </Button>
-                    <Button
-                      onClick={() => setSelectedConnectors(connectorSourcesMenu.map(c => c.type))}
-                    >
-                      Select All
-                    </Button>
+                  <DialogFooter className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedConnectors([])}
+                      >
+                        Clear All
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedConnectors(connectorSourceItems.map(c => c.type))}
+                      >
+                        Select All
+                      </Button>
+                    </div>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

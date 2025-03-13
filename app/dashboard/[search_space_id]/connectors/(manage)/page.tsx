@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Edit, Plus, Search, Trash2, ExternalLink } from "lucide-react";
 
-import { ConnectorService, Connector, getConnectorTypeDisplay } from "@/hooks/use-connectors";
+import { useSearchSourceConnectors } from "@/hooks/useSearchSourceConnectors";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,39 +36,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Helper function to get connector type display name
+const getConnectorTypeDisplay = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    "SERPER_API": "Serper API",
+    "TAVILY_API": "Tavily API",
+    // Add other connector types here as needed
+  };
+  return typeMap[type] || type;
+};
+
 export default function ConnectorsPage() {
   const router = useRouter();
   const params = useParams();
   const searchSpaceId = params.search_space_id as string;
   
-  const [connectors, setConnectors] = useState<Connector[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { connectors, isLoading, error, deleteConnector } = useSearchSourceConnectors();
   const [connectorToDelete, setConnectorToDelete] = useState<number | null>(null);
 
-  // Fetch connectors on page load
   useEffect(() => {
-    const fetchConnectors = async () => {
-      try {
-        const data = await ConnectorService.getConnectors();
-        setConnectors(data);
-      } catch (error) {
-        console.error("Error fetching connectors:", error);
-        toast.error("Failed to load connectors");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchConnectors();
-  }, []);
+    if (error) {
+      toast.error("Failed to load connectors");
+      console.error("Error fetching connectors:", error);
+    }
+  }, [error]);
 
   // Handle connector deletion
   const handleDeleteConnector = async () => {
     if (connectorToDelete === null) return;
     
     try {
-      await ConnectorService.deleteConnector(connectorToDelete);
-      setConnectors(connectors.filter(c => c.id !== connectorToDelete));
+      await deleteConnector(connectorToDelete);
       toast.success("Connector deleted successfully");
     } catch (error) {
       console.error("Error deleting connector:", error);
@@ -141,7 +139,7 @@ export default function ConnectorsPage() {
                       <TableCell className="font-medium">{connector.name}</TableCell>
                       <TableCell>{getConnectorTypeDisplay(connector.connector_type)}</TableCell>
                       <TableCell>
-                        {new Date(connector.created_at).toLocaleDateString()}
+                        {connector.created_at && new Date(connector.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

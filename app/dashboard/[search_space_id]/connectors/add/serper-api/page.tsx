@@ -9,7 +9,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Info, Loader2 } from "lucide-react";
 
-import { ConnectorService } from "@/hooks/use-connectors";
+import { useSearchSourceConnectors } from "@/hooks/useSearchSourceConnectors";
 import {
   Form,
   FormControl,
@@ -53,6 +53,7 @@ export default function SerperApiPage() {
   const params = useParams();
   const searchSpaceId = params.search_space_id as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createConnector } = useSearchSourceConnectors();
 
   // Initialize the form
   const form = useForm<SerperApiFormValues>({
@@ -67,12 +68,14 @@ export default function SerperApiPage() {
   const onSubmit = async (values: SerperApiFormValues) => {
     setIsSubmitting(true);
     try {
-      await ConnectorService.createConnector({
+      await createConnector({
         name: values.name,
         connector_type: "SERPER_API",
         config: {
           SERPER_API_KEY: values.api_key,
         },
+        is_indexable: false,
+        last_indexed_at: null,
       });
 
       toast.success("Serper API connector created successfully!");
