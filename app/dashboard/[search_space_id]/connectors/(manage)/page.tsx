@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Edit, Plus, Search, Trash2, ExternalLink } from "lucide-react";
+import { Edit, Plus, Search, Trash2, ExternalLink, RefreshCw } from "lucide-react";
 
 import { useSearchSourceConnectors } from "@/hooks/useSearchSourceConnectors";
 import { Button } from "@/components/ui/button";
@@ -35,15 +35,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Helper function to get connector type display name
 const getConnectorTypeDisplay = (type: string): string => {
   const typeMap: Record<string, string> = {
     "SERPER_API": "Serper API",
     "TAVILY_API": "Tavily API",
+    "SLACK_CONNECTOR": "Slack",
     // Add other connector types here as needed
   };
   return typeMap[type] || type;
+};
+
+// Helper function to format date with time
+const formatDateTime = (dateString: string | null): string => {
+  if (!dateString) return "Never";
+  
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
 };
 
 export default function ConnectorsPage() {
@@ -51,8 +67,9 @@ export default function ConnectorsPage() {
   const params = useParams();
   const searchSpaceId = params.search_space_id as string;
   
-  const { connectors, isLoading, error, deleteConnector } = useSearchSourceConnectors();
+  const { connectors, isLoading, error, deleteConnector, indexConnector } = useSearchSourceConnectors();
   const [connectorToDelete, setConnectorToDelete] = useState<number | null>(null);
+  const [indexingConnectorId, setIndexingConnectorId] = useState<number | null>(null);
 
   useEffect(() => {
     if (error) {
@@ -73,6 +90,20 @@ export default function ConnectorsPage() {
       toast.error("Failed to delete connector");
     } finally {
       setConnectorToDelete(null);
+    }
+  };
+
+  // Handle connector indexing
+  const handleIndexConnector = async (connectorId: number) => {
+    setIndexingConnectorId(connectorId);
+    try {
+      await indexConnector(connectorId, searchSpaceId);
+      toast.success("Connector content indexed successfully");
+    } catch (error) {
+      console.error("Error indexing connector content:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to index connector content");
+    } finally {
+      setIndexingConnectorId(null);
     }
   };
 
@@ -129,7 +160,7 @@ export default function ConnectorsPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Last Indexed</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,10 +170,36 @@ export default function ConnectorsPage() {
                       <TableCell className="font-medium">{connector.name}</TableCell>
                       <TableCell>{getConnectorTypeDisplay(connector.connector_type)}</TableCell>
                       <TableCell>
-                        {connector.created_at && new Date(connector.created_at).toLocaleDateString()}
+                        {connector.is_indexable 
+                          ? formatDateTime(connector.last_indexed_at)
+                          : "Not indexable"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {connector.is_indexable && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleIndexConnector(connector.id)}
+                                    disabled={indexingConnectorId === connector.id}
+                                  >
+                                    {indexingConnectorId === connector.id ? (
+                                      <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4" />
+                                    )}
+                                    <span className="sr-only">Index Content</span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Index Content</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"

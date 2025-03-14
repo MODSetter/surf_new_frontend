@@ -227,6 +227,49 @@ export const useSearchSourceConnectors = () => {
   };
 
   /**
+   * Index content from a connector to a search space
+   */
+  const indexConnector = async (connectorId: number, searchSpaceId: string | number) => {
+    try {
+      const token = localStorage.getItem('surfsense_bearer_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/search-source-connectors/${connectorId}/index?search_space_id=${searchSpaceId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to index connector content: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Update the connector's last_indexed_at timestamp
+      const updatedConnectors = connectors.map(connector => 
+        connector.id === connectorId 
+          ? { ...connector, last_indexed_at: new Date().toISOString() } 
+          : connector
+      );
+      setConnectors(updatedConnectors);
+      
+      return result;
+    } catch (err) {
+      console.error('Error indexing connector content:', err);
+      throw err;
+    }
+  };
+
+  /**
    * Get connector source items - memoized to prevent unnecessary re-renders
    */
   const getConnectorSourceItems = useCallback(() => {
@@ -240,6 +283,7 @@ export const useSearchSourceConnectors = () => {
     createConnector,
     updateConnector,
     deleteConnector,
+    indexConnector,
     getConnectorSourceItems,
     connectorSourceItems
   };
