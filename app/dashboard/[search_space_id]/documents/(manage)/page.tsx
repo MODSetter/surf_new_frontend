@@ -93,7 +93,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { DocumentViewer } from "@/components/document-viewer";
 import { JsonMetadataViewer } from "@/components/json-metadata-viewer";
-import { IconBrandNotion } from "@tabler/icons-react";
+import { IconBrandNotion, IconBrandSlack } from "@tabler/icons-react";
 
 // Define animation variants for reuse
 const fadeInScale = {
@@ -137,7 +137,7 @@ const statusFilterFn: FilterFn<Document> = (row, columnId, filterValue: string[]
 const documentTypeIcons = {
     EXTENSION: FileText,
     CRAWLED_URL: Globe,
-    SLACK_CONNECTOR: MessageSquare,
+    SLACK_CONNECTOR: IconBrandSlack,
     NOTION_CONNECTOR: IconBrandNotion,
     FILE: File,
 } as const;
@@ -191,16 +191,20 @@ const columns: ColumnDef<Document>[] = [
             const type = row.getValue("document_type") as keyof typeof documentTypeIcons;
             const Icon = documentTypeIcons[type];
             return (
-                <Badge variant="outline" className="flex items-center gap-1.5">
-                    <Icon size={14} />
-                    {type.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                        <Icon size={20} className="text-primary" />
+                    </div>
+                    <span className="font-medium text-xs">
+                        {type.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                    </span>
+                </div>
             );
         },
-        size: 160,
+        size: 180,
     },
     {
-        header: "Content Preview",
+        header: "Content Summary",
         accessorKey: "content",
         cell: ({ row }) => {
             const content = row.getValue("content") as string;
@@ -639,10 +643,10 @@ export default function DocumentsTable() {
                             </AlertDialog>
                         )}
                         {/* Add user button */}
-                        <Button className="ml-auto" variant="outline">
+                        {/* <Button className="ml-auto" variant="outline">
                             <Plus className="-ms-1 me-2 opacity-60" size={16} strokeWidth={2} aria-hidden="true" />
                             Add document
-                        </Button>
+                        </Button> */}
                     </div>
                 </motion.div>
 

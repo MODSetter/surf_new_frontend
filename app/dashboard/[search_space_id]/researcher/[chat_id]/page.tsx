@@ -669,7 +669,7 @@ const ChatPage = () => {
       <div className="flex flex-col min-h-[calc(100vh-4rem)] min-w-4xl max-w-4xl mx-auto px-4 py-8 overflow-x-hidden justify-center gap-4">
         {messages.length === 0 && (
           <h2 className="flex gap-2 justify-center text-balance relative z-50 mx-auto mb-6 text-center text-2xl font-semibold tracking-tight text-gray-700 dark:text-neutral-300 md:text-7xl">
-            <Logo className='rounded-md' />
+            <Logo className='w-16 h-16 rounded-md' />
             <div className='text-muted-foreground'>
               Surf{""}
               <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">

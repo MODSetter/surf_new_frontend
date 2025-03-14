@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { apiClient } from '@/lib/api'; // Import the API client
 
 interface Chat {
   created_at: string;
@@ -72,9 +73,15 @@ export function AppSidebarProvider({
   const [chatError, setChatError] = useState<string | null>(null);
   const [searchSpaceError, setSearchSpaceError] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<{ id: number, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Set isClient to true when component mounts on the client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch user details
   useEffect(() => {
@@ -83,37 +90,19 @@ export function AppSidebarProvider({
         // Only run on client-side
         if (typeof window === 'undefined') return;
 
-        // Get token from localStorage
-        const token = localStorage.getItem('surfsense_bearer_token');
-        
-        if (!token) {
-          console.warn('No authentication token found in localStorage');
+        try {
+          // Use the API client instead of direct fetch
+          const userData = await apiClient.get<User>('users/me');
+          setUser(userData);
+          setUserError(null);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+          setUserError(error instanceof Error ? error.message : 'Unknown error occurred');
+        } finally {
           setIsLoadingUser(false);
-          return;
         }
-
-        // Fetch user details from API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(`Failed to fetch user: ${response.status} ${errorData?.detail || ''}`);
-        }
-
-        const userData: User = await response.json();
-        setUser(userData);
-        setUserError(null);
       } catch (error) {
-        console.error('Error fetching user:', error);
-        setUserError(error instanceof Error ? error.message : 'Unknown error occurred');
-      } finally {
+        console.error('Error in fetchUser:', error);
         setIsLoadingUser(false);
       }
     };
@@ -128,66 +117,48 @@ export function AppSidebarProvider({
         // Only run on client-side
         if (typeof window === 'undefined') return;
 
-        // Get token from localStorage
-        const token = localStorage.getItem('surfsense_bearer_token');
-        
-        if (!token) {
-          console.warn('No authentication token found in localStorage');
+        try {
+          // Use the API client instead of direct fetch
+          const chats: Chat[] = await apiClient.get<Chat[]>('api/v1/chats/?limit=5&skip=0');
+          
+          // Transform API response to the format expected by AppSidebar
+          const formattedChats = chats.map(chat => ({
+            name: chat.title || `Chat ${chat.id}`, // Fallback if title is empty
+            url: `/dashboard/${chat.search_space_id}/researcher/${chat.id}`,
+            icon: 'MessageCircleMore',
+            id: chat.id,
+            search_space_id: chat.search_space_id,
+            actions: [
+              {
+                name: 'View Details',
+                icon: 'ExternalLink',
+                onClick: () => {
+                  window.location.href = `/dashboard/${chat.search_space_id}/researcher/${chat.id}`;
+                }
+              },
+              {
+                name: 'Delete',
+                icon: 'Trash2',
+                onClick: () => {
+                  setChatToDelete({ id: chat.id, name: chat.title || `Chat ${chat.id}` });
+                  setShowDeleteDialog(true);
+                }
+              }
+            ]
+          }));
+
+          setRecentChats(formattedChats);
+          setChatError(null);
+        } catch (error) {
+          console.error('Error fetching chats:', error);
+          setChatError(error instanceof Error ? error.message : 'Unknown error occurred');
+          // Provide empty array to ensure UI still renders
+          setRecentChats([]);
+        } finally {
           setIsLoadingChats(false);
-          return;
         }
-
-        // Fetch recent chats from API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/?limit=5&skip=0`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(`Failed to fetch chats: ${response.status} ${errorData?.error || ''}`);
-        }
-
-        const chats: Chat[] = await response.json();
-        
-        // Transform API response to the format expected by AppSidebar
-        const formattedChats = chats.map(chat => ({
-          name: chat.title || `Chat ${chat.id}`, // Fallback if title is empty
-          url: `/dashboard/${chat.search_space_id}/researcher/${chat.id}`,
-          icon: 'MessageCircleMore',
-          id: chat.id,
-          search_space_id: chat.search_space_id,
-          actions: [
-            {
-              name: 'View Details',
-              icon: 'ExternalLink',
-              onClick: () => {
-                window.location.href = `/dashboard/${chat.search_space_id}/researcher/${chat.id}`;
-              }
-            },
-            {
-              name: 'Delete',
-              icon: 'Trash2',
-              onClick: () => {
-                setChatToDelete({ id: chat.id, name: chat.title || `Chat ${chat.id}` });
-                setDeleteDialogOpen(true);
-              }
-            }
-          ]
-        }));
-
-        setRecentChats(formattedChats);
-        setChatError(null);
       } catch (error) {
-        console.error('Error fetching recent chats:', error);
-        setChatError(error instanceof Error ? error.message : 'Unknown error occurred');
-        // Provide empty array to ensure UI still renders
-        setRecentChats([]);
-      } finally {
+        console.error('Error in fetchRecentChats:', error);
         setIsLoadingChats(false);
       }
     };
@@ -201,40 +172,25 @@ export function AppSidebarProvider({
     return () => clearInterval(intervalId);
   }, []);
 
-  // Function to handle chat deletion
+  // Handle delete chat
   const handleDeleteChat = async () => {
     if (!chatToDelete) return;
     
-    setIsDeleting(true);
     try {
-      const token = localStorage.getItem('surfsense_bearer_token');
-      if (!token) {
-        setIsDeleting(false);
-        return;
-      }
+      setIsDeleting(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/chats/${chatToDelete.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to delete chat: ${response.statusText}`);
-      }
+      // Use the API client instead of direct fetch
+      await apiClient.delete(`api/v1/chats/${chatToDelete.id}`);
       
       // Close dialog and refresh chats
-      setDeleteDialogOpen(false);
-      setChatToDelete(null);
+      setRecentChats(recentChats.filter(chat => chat.id !== chatToDelete.id));
       
-      // Refresh the chat list
-      setRecentChats(prevChats => prevChats.filter(chat => chat.id !== chatToDelete.id));
     } catch (error) {
       console.error('Error deleting chat:', error);
     } finally {
       setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setChatToDelete(null);
     }
   };
 
@@ -245,37 +201,19 @@ export function AppSidebarProvider({
         // Only run on client-side
         if (typeof window === 'undefined') return;
 
-        // Get token from localStorage
-        const token = localStorage.getItem('surfsense_bearer_token');
-        
-        if (!token) {
-          console.warn('No authentication token found in localStorage');
+        try {
+          // Use the API client instead of direct fetch
+          const data: SearchSpace = await apiClient.get<SearchSpace>(`api/v1/searchspaces/${searchSpaceId}`);
+          setSearchSpace(data);
+          setSearchSpaceError(null);
+        } catch (error) {
+          console.error('Error fetching search space:', error);
+          setSearchSpaceError(error instanceof Error ? error.message : 'Unknown error occurred');
+        } finally {
           setIsLoadingSearchSpace(false);
-          return;
         }
-
-        // Fetch search space details from API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_BACKEND_URL}/api/v1/searchspaces/${searchSpaceId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(`Failed to fetch search space: ${response.status} ${errorData?.detail || ''}`);
-        }
-
-        const data: SearchSpace = await response.json();
-        setSearchSpace(data);
-        setSearchSpaceError(null);
       } catch (error) {
-        console.error('Error fetching search space:', error);
-        setSearchSpaceError(error instanceof Error ? error.message : 'Unknown error occurred');
-      } finally {
+        console.error('Error in fetchSearchSpace:', error);
         setIsLoadingSearchSpace(false);
       }
     };
@@ -300,7 +238,7 @@ export function AppSidebarProvider({
 
   // Update the first item in navSecondary to show the search space name
   const updatedNavSecondary = [...navSecondary];
-  if (updatedNavSecondary.length > 0) {
+  if (updatedNavSecondary.length > 0 && isClient) {
     updatedNavSecondary[0] = {
       ...updatedNavSecondary[0],
       title: searchSpace?.name || (isLoadingSearchSpace ? 'Loading...' : searchSpaceError ? 'Error loading search space' : 'Unknown Search Space'),
@@ -309,8 +247,8 @@ export function AppSidebarProvider({
 
   // Create user object for AppSidebar
   const customUser = {
-    name: user?.email?.split('@')[0] || 'User',
-    email: user?.email || (isLoadingUser ? 'Loading...' : userError ? 'Error loading user' : 'Unknown User'),
+    name: isClient && user?.email ? user.email.split('@')[0] : 'User',
+    email: isClient ? (user?.email || (isLoadingUser ? 'Loading...' : userError ? 'Error loading user' : 'Unknown User')) : 'Loading...',
     avatar: '/icon-128.png', // Default avatar
   };
 
@@ -320,50 +258,52 @@ export function AppSidebarProvider({
         user={customUser}
         navSecondary={updatedNavSecondary}
         navMain={navMain}
-        RecentChats={displayChats}
+        RecentChats={isClient ? displayChats : []}
       />
       
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
-              <span>Delete Chat</span>
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <span className="font-medium">{chatToDelete?.name}</span>? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2 sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteChat}
-              disabled={isDeleting}
-              className="gap-2"
-            >
-              {isDeleting ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog - Only render on client */}
+      {isClient && (
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                <span>Delete Chat</span>
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <span className="font-medium">{chatToDelete?.name}</span>? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteChat}
+                disabled={isDeleting}
+                className="gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 } 

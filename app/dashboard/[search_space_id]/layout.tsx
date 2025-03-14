@@ -1,17 +1,16 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { ThemeTogglerComponent } from "@/components/theme/theme-toggle"
-import React from 'react'
-import { Separator } from "@/components/ui/separator"
-import { AppSidebarProvider } from "@/components/sidebar/AppSidebarProvider"
+// Server component
+import React, { use } from 'react'
+import { DashboardClientLayout } from './client-layout'
 
-
-const layout = async ({ params, children }: { params: { search_space_id: string }, children: React.ReactNode }) => {
-  // This removes the https://nextjs.org/docs/messages/sync-dynamic-apis error
-  const { search_space_id } = await params;
+export default function DashboardLayout({ 
+  params, 
+  children 
+}: { 
+  params: Promise<{ search_space_id: string }>, 
+  children: React.ReactNode 
+}) {
+  // Use React.use to unwrap the params Promise
+  const { search_space_id } = use(params);
 
   // TODO: Get search space name from our FastAPI backend
   const customNavSecondary = [
@@ -70,43 +69,31 @@ const layout = async ({ params, children }: { params: { search_space_id: string 
         },
       ],
     },
-    {
-      title: "Research Synthesizer's",
-      url: `#`,
-      icon: "SquareLibrary",
-      items: [
-        {
-          title: "Podcast Creator",
-          url: `/dashboard/${search_space_id}/synthesizer/podcast`,
-        },
-        {
-          title: "Presentation Creator",
-          url: `/dashboard/${search_space_id}/synthesizer/presentation`,
-        },
-      ],
-    },
+    // TODO: Add research synthesizer's
+    // {
+    //   title: "Research Synthesizer's",
+    //   url: `#`,
+    //   icon: "SquareLibrary",
+    //   items: [
+    //     {
+    //       title: "Podcast Creator",
+    //       url: `/dashboard/${search_space_id}/synthesizer/podcast`,
+    //     },
+    //     {
+    //       title: "Presentation Creator",
+    //       url: `/dashboard/${search_space_id}/synthesizer/presentation`,
+    //     },
+    //   ],
+    // },
   ]
 
   return (
-    <SidebarProvider>
-      {/* Use AppSidebarProvider which fetches user, search space, and recent chats */}
-      <AppSidebarProvider
-        searchSpaceId={search_space_id}
-        navSecondary={customNavSecondary}
-        navMain={customNavMain}
-      />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="h-6" />
-            <ThemeTogglerComponent />
-          </div>
-        </header>
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+    <DashboardClientLayout
+      searchSpaceId={search_space_id}
+      navSecondary={customNavSecondary}
+      navMain={customNavMain}
+    >
+      {children}
+    </DashboardClientLayout>
   )
 }
-
-export default layout

@@ -121,16 +121,19 @@ const defaultData = {
       name: "Design Engineering",
       url: "#",
       icon: "MessageCircleMore",
+      id: 1001,
     },
     {
       name: "Sales & Marketing",
       url: "#",
       icon: "MessageCircleMore",
+      id: 1002,
     },
     {
       name: "Travel",
       url: "#",
       icon: "MessageCircleMore",
+      id: 1003,
     },
   ],
 }

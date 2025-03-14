@@ -63,8 +63,8 @@ export function NavProjects({
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
-          <SidebarMenuItem key={item.name}>
+        {projects.map((item, index) => (
+          <SidebarMenuItem key={item.id ? `chat-${item.id}` : `chat-${item.name}-${index}`}>
             <SidebarMenuButton>
               <item.icon />
               <span>{item.name}</span>
@@ -83,10 +83,10 @@ export function NavProjects({
               >
                 {item.actions ? (
                   // Use the actions provided by the item
-                  item.actions.map((action) => {
+                  item.actions.map((action, actionIndex) => {
                     const ActionIcon = actionIconMap[action.icon] || Folder;
                     return (
-                      <DropdownMenuItem key={action.name} onClick={action.onClick}>
+                      <DropdownMenuItem key={`${action.name}-${actionIndex}`} onClick={action.onClick}>
                         <ActionIcon className="text-muted-foreground" />
                         <span>{action.name}</span>
                       </DropdownMenuItem>

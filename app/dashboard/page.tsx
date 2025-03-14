@@ -245,7 +245,7 @@ const DashboardPage = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                       <div className="absolute bottom-2 left-3 flex items-center gap-2">
-                        <Link href={`/dashboard/${space.id}/documents`}>
+                        <Link href={`/dashboard/${space.id}/researcher`}>
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950/80">
                             <Search className="h-4 w-4 text-blue-500" />
                           </span>
