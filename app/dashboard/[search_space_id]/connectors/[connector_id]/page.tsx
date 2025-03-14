@@ -49,6 +49,8 @@ const getConnectorTypeDisplay = (type: string): string => {
   const typeMap: Record<string, string> = {
     "SERPER_API": "Serper API",
     "TAVILY_API": "Tavily API",
+    "SLACK_CONNECTOR": "Slack Connector",
+    "NOTION_CONNECTOR": "Notion Connector",
     // Add other connector types here as needed
   };
   return typeMap[type] || type;
@@ -82,6 +84,8 @@ export default function EditConnectorPage() {
     const fieldMap: Record<string, string> = {
       "SERPER_API": "SERPER_API_KEY",
       "TAVILY_API": "TAVILY_API_KEY",
+      "SLACK_CONNECTOR": "SLACK_BOT_TOKEN",
+      "NOTION_CONNECTOR": "NOTION_INTEGRATION_TOKEN"
     };
     return fieldMap[connectorType] || "";
   };
@@ -122,12 +126,16 @@ export default function EditConnectorPage() {
     try {
       const apiKeyField = getApiKeyFieldName(connector.connector_type);
       
+      // Only update the API key if a new one was provided
+      const updatedConfig = { ...connector.config };
+      if (values.api_key) {
+        updatedConfig[apiKeyField] = values.api_key;
+      }
+
       await updateConnector(connectorId, {
         name: values.name,
         connector_type: connector.connector_type,
-        config: {
-          [apiKeyField]: values.api_key,
-        },
+        config: updatedConfig,
       });
 
       toast.success("Connector updated successfully!");
@@ -210,16 +218,32 @@ export default function EditConnectorPage() {
                   name="api_key"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>API Key</FormLabel>
+                      <FormLabel>
+                        {connector?.connector_type === "SLACK_CONNECTOR" 
+                          ? "Slack Bot Token" 
+                          : connector?.connector_type === "NOTION_CONNECTOR" 
+                            ? "Notion Integration Token" 
+                            : "API Key"}
+                      </FormLabel>
                       <FormControl>
                         <Input 
                           type="password" 
-                          placeholder="Enter your API key" 
+                          placeholder={
+                            connector?.connector_type === "SLACK_CONNECTOR" 
+                              ? "Enter your Slack Bot Token" 
+                              : connector?.connector_type === "NOTION_CONNECTOR" 
+                                ? "Enter your Notion Integration Token" 
+                                : "Enter your API key"
+                          } 
                           {...field} 
                         />
                       </FormControl>
                       <FormDescription>
-                        Enter a new API key or leave blank to keep your existing key.
+                        {connector?.connector_type === "SLACK_CONNECTOR" 
+                          ? "Enter a new Slack Bot Token or leave blank to keep your existing token." 
+                          : connector?.connector_type === "NOTION_CONNECTOR" 
+                            ? "Enter a new Notion Integration Token or leave blank to keep your existing token." 
+                            : "Enter a new API key or leave blank to keep your existing key."}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

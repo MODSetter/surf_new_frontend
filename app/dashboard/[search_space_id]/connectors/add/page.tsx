@@ -32,18 +32,18 @@ const connectorCategories = [
     icon: <IconSearch className="h-5 w-5" />,
     connectors: [
       {
+        id: "tavily-api",
+        title: "Tavily Search API",
+        description: "Connect to Tavily Search API to search the web.",
+        icon: <IconSearch className="h-6 w-6" />,
+        status: "available",
+      },
+      {
         id: "serper-api",
         title: "Serper API",
         description: "Connect to Serper API to search the web.",
         icon: <IconBrandGoogle className="h-6 w-6" />,
-        status: "available",
-      },
-      {
-        id: "tavily-api",
-        title: "Tavily Search API",
-        description: "Connect to Tavily Search API to search the web.",
-        icon: <IconBrandWindows className="h-6 w-6" />,
-        status: "available",
+        status: "coming-soon",
       },
     ],
   },
@@ -54,11 +54,11 @@ const connectorCategories = [
     icon: <IconMessages className="h-5 w-5" />,
     connectors: [
       {
-        id: "slack",
+        id: "slack-connector",
         title: "Slack",
         description: "Connect to your Slack workspace to access messages and channels.",
         icon: <IconBrandSlack className="h-6 w-6" />,
-        status: "coming-soon",
+        status: "available",
       },
       {
         id: "ms-teams",
@@ -83,11 +83,11 @@ const connectorCategories = [
     icon: <IconDatabase className="h-5 w-5" />,
     connectors: [
       {
-        id: "notion",
+        id: "notion-connector",
         title: "Notion",
         description: "Connect to your Notion workspace to access pages and databases.",
         icon: <IconBrandNotion className="h-6 w-6" />,
-        status: "coming-soon",
+        status: "available",
       },
       {
         id: "github",

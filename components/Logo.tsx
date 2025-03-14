@@ -13,8 +13,8 @@ export const Logo = ({ className }: { className?: string }) => {
         src="/icon-128.png"
         className={cn(className)}
         alt="logo"
-        width={50}
-        height={50}
+        width={128}
+        height={128}
       />
     </Link>
   );

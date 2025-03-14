@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 export interface Document {
   id: number;
   title: string;
-  document_type: "EXTENSION" | "CRAWLED_URL" | "SLACK_CONNECTOR";
+  document_type: "EXTENSION" | "CRAWLED_URL" | "SLACK_CONNECTOR" | "NOTION_CONNECTOR" | "FILE";
   document_metadata: any;
   content: string;
   created_at: string;

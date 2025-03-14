@@ -93,6 +93,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { DocumentViewer } from "@/components/document-viewer";
 import { JsonMetadataViewer } from "@/components/json-metadata-viewer";
+import { IconBrandNotion } from "@tabler/icons-react";
 
 // Define animation variants for reuse
 const fadeInScale = {
@@ -112,7 +113,7 @@ const fadeInScale = {
 type Document = {
     id: number;
     title: string;
-    document_type: "EXTENSION" | "CRAWLED_URL" | "SLACK_CONNECTOR" | "FILE";
+    document_type: "EXTENSION" | "CRAWLED_URL" | "SLACK_CONNECTOR" | "NOTION_CONNECTOR" | "FILE";
     document_metadata: any;
     content: string;
     created_at: string;
@@ -137,6 +138,7 @@ const documentTypeIcons = {
     EXTENSION: FileText,
     CRAWLED_URL: Globe,
     SLACK_CONNECTOR: MessageSquare,
+    NOTION_CONNECTOR: IconBrandNotion,
     FILE: File,
 } as const;
 
